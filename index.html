@@ -222,24 +222,24 @@ min-width: 260px;
 padding-right: 5px;
 }
 /* ==========================================================================
-PERBAIKAN UTAMA: PANEL ATRIBUT BAWAH LAYAR YANG PADAT & MINIM SPACE KOSONG
+PERBAIKAN UTAMA: POSISI FIXED SUPAYA TETAP DI BAWAH & TIDAK BERGERAK SAAT SCROLL
 ========================================================================== */
 #bottom-attribute-panel {
-position: absolute;
+position: fixed; /* Mengunci posisi panel terhadap viewport layar */
 bottom: -400px;
 left: 50%;
 transform: translateX(-50%);
 width: 90%;
 max-width: 950px;
-height: auto; /* Otomatis mengikuti tinggi konten di dalamnya, menghilangkan blank space */
-max-height: 290px; /* Batas aman tinggi agar tidak menutupi peta */
+height: auto; 
+max-height: 290px; 
 background: rgba(255, 255, 255, 0.94);
 backdrop-filter: blur(12px);
 -webkit-backdrop-filter: blur(12px);
 z-index: 1000;
 border-radius: 12px 12px 0 0;
 box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
-padding: 10px 14px 10px 14px; /* Padding bawah dioptimalkan */
+padding: 10px 14px 10px 14px; 
 box-sizing: border-box;
 transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 display: flex;
@@ -270,10 +270,11 @@ line-height: 1;
 overflow-x: auto;
 overflow-y: auto;
 width: 100%;
-max-height: 130px; /* Mengunci max-height tabel agar sisa ruang bawah tidak menganga */
+max-height: 130px; 
 background: #fff;
 border: 1px solid #ddd;
 border-radius: 4px;
+overscroll-behavior: contain; /* Mencegah efek scroll bocor ke background peta */
 }
 .grid-table {
 width: 100%;
