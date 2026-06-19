@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live WebGIS - Smart Water Level (Online Mode)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+#map { 
+height: 100vh; 
+width: 100%; 
+/* PERBAIKAN: Mengunci posisi layer peta di lapisan paling bawah */
+position: relative;
+z-index: 1; 
+}
+body { 
+margin: 0; 
+padding: 0; 
+font-family: Arial, sans-serif;
+background-color: #000; /* Latar gelap dasar agar kontras transparan satelit lebih menonjol */
+overflow: hidden;
+}
+/* ==========================================================================
+DESAIN SPLASH SCREEN KUSTOM PREMIUM (MURNI TEKS & GRADASI MERAH)
+========================================================================== */
+#splash-screen {
+position: fixed;
+top: 0;
+left: 0;
+width: 100vw;
+height: 100vh;
+background: linear-gradient(180deg, #e31e24 0%, #b81418 100%); 
+z-index: 9999;
+display: flex;
+justify-content: center;
+align-items: center;
+text-align: center;
+transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.splash-content {
+animation: fadeInContent 0.8s ease-out;
+}
+.splash-title {
+color: #ffffff; 
+margin: 0; 
+font-size: 48px; 
+font-weight: 900; 
+letter-spacing: 3px;
+text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.splash-subtitle {
+color: rgba(255, 255, 255, 0.9); 
+margin: 8px 0 30px 0; 
+font-size: 13px; 
+font-weight: bold; 
+letter-spacing: 3px;
+text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.spinner {
+margin: 0 auto;
+width: 32px;
+height: 32px;
+border: 3px solid rgba(255, 255, 255, 0.2);
+border-top: 3px solid #ffffff; 
+border-radius: 50%;
+animation: spin 0.8s linear infinite;
+}
+#splash-status {
+color: rgba(255, 255, 255, 0.6); 
+position: absolute; 
+bottom: 40px; 
+left: 0; 
+width: 100%; 
+font-size: 11px; 
+letter-spacing: 1px;
+}
+@keyframes spin {
+0% { transform: rotate(0deg); }
+100% { transform: rotate(360deg); }
+}
+@keyframes fadeInContent {
+from { opacity: 0; transform: translateY(10px); }
+to { opacity: 1; transform: translateY(0); }
+}
+/* ==========================================================================
+STRUKTUR PURE CSS HAMBURGER & CONTAINER MENU BERLAPIS
+========================================================================== */
+/* Sakelar Checkbox Tersembunyi */
+#menu-toggle {
+display: none;
+}
+/* Tombol Hamburger */
+.hamburger-label {
+position: absolute;
+top: 12px;
+right: 12px;
+z-index: 2000;
+background: rgba(255, 255, 255, 0.7);
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+border: 1px solid rgba(255, 255, 255, 0.4);
+border-radius: 8px;
+width: 38px;
+height: 38px;
+cursor: pointer;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+gap: 4px;
+box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+transition: all 0.3s ease;
+}
+.hamburger-label span {
+display: block;
+width: 20px;
+height: 3px;
+background: #0056b3;
+border-radius: 2px;
+transition: transform 0.3s ease, opacity 0.3s ease;
+}
+/* Wadah Utama Menu Berlapis (Drawer) - DIOPTIMALKAN AGAR FIT 1 LAYAR */
+.menu-drawer-container {
+position: absolute;
+top: 0;
+right: -320px; /* Sembunyi di luar kanan layar */
+width: 280px;
+height: 100vh;
+height: 100dvh;
+background: rgba(255, 255, 255, 0.82);
+backdrop-filter: blur(15px) saturate(180%);
+-webkit-backdrop-filter: blur(15px) saturate(180%);
+box-shadow: -5px 0 30px rgba(0,0,0,0.25);
+z-index: 105;
+padding: 48px 12px 12px 12px;
+box-sizing: border-box;
+transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+gap: 2px;
+border-left: 1px solid rgba(255, 255, 255, 0.3);
+overflow: hidden;
+}
+/* Logika Pemicu Geser Saat Tombol Hamburger Diklik (Checked) */
+#menu-toggle:checked ~ .menu-drawer-container {
+right: 0; /* Geser panel masuk ke dalam layar */
+}
+#menu-toggle:checked ~ .hamburger-label span:nth-child(1) {
+transform: translateY(7px) rotate(45deg);
+}
+#menu-toggle:checked ~ .hamburger-label span:nth-child(2) {
+opacity: 0;
+}
+#menu-toggle:checked ~ .hamburger-label span:nth-child(3) {
+transform: translateY(-7px) rotate(-45deg);
+}
+/* ==========================================================================
+UI: GLASSMORPHISM PANEL (DIMASUKKAN KE DALAM DRAWER BERLAPIS)
+========================================================================== */
+#upload-panel {
+position: static; /* Mengikuti susunan tata letak vertikal drawer */
+background: none;
+backdrop-filter: none;
+-webkit-backdrop-filter: none;
+padding: 0;
+box-shadow: none;
+font-size: 11.5px;
+border: none;
+max-width: 100%;
+display: flex;
+flex-direction: column;
+gap: 3px;
+flex: 1;
+min-height: 0;
+}
+#debug-panel {
+position: static; /* Mengikuti susunan tata letak vertikal drawer */
+background: rgba(255, 255, 255, 0.45);
+backdrop-filter: blur(5px);
+-webkit-backdrop-filter: blur(5px);
+padding: 6px 10px;
+border-radius: 6px;
+box-shadow: none;
+font-size: 10.5px;
+max-width: 100%;
+line-height: 1.2;
+border: 1px solid rgba(255, 255, 255, 0.4);
+margin-top: 5px; /* Memaksa panel debug konsisten berada di posisi paling bawah drawer */
+flex-shrink: 0;
+}
+/* KONDISI RESPONSIF LAYAR GADGET HP */
+@media screen and (max-width: 600px) {
+.hamburger-label { top: 10px; right: 10px; width: 34px; height: 34px; }
+.menu-drawer-container { width: 245px; right: -275px; padding: 42px 10px 10px 10px; gap: 2px; }
+#upload-panel { font-size: 11px; gap: 2px; }
+#upload-panel b { font-size: 10.5px !important; }
+#upload-panel input { padding: 3px !important; font-size: 10.5px !important; }
+#debug-panel { padding: 5px 8px; font-size: 10px; }
+.google-label-text { font-size: 9px !important; }
+.google-thumbnail { aspect-ratio: 1.4 / 1 !important; border-radius: 6px !important; }
+}
+/* Style Tambahan untuk Tabel Atribut Popup agar Rapi & Tidak Terpotong */
+.popup-table {
+width: 100%;
+border-collapse: collapse;
+margin-top: 8px;
+}
+.popup-table td {
+padding: 4px 6px;
+border-bottom: 1px solid #eee;
+font-size: 11px;
+color: #333;
+vertical-align: top;
+}
+.popup-table td.label-col {
+font-weight: bold;
+color: #555;
+width: 45%;
+}
+.popup-scroll-container {
+max-height: 280px;
+overflow-y: auto;
+min-width: 260px;
+padding-right: 5px;
+}
+/* ==========================================================================
+DESAIN LAYOUT GRID JENIS PETA & DETAIL PETA (GOOGLE MAPS STYLE)
+========================================================================== */
+.basemap-grid-container {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 5px;
+margin-top: 2px;
+margin-bottom: 4px;
+width: 100%;
+box-sizing: border-box;
+}
+/* Grid Khusus Detail Peta (Filter Status) */
+.detail-grid-container {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 5px;
+margin-top: 2px;
+margin-bottom: 4px;
+width: 100%;
+box-sizing: border-box;
+}
+/* Sembunyikan radio default */
+.google-card-input {
+display: none;
+}
+/* Desain Card Wrapper */
+.google-maps-card {
+display: flex;
+flex-direction: column;
+align-items: center;
+text-align: center;
+cursor: pointer;
+width: 100%;
+}
+/* Desain Frame Thumbnail Gambar / Ikon Mini - DICIPTAKAN CEPER AGAR HEMAT RUANG */
+.google-thumbnail {
+width: 100%;
+aspect-ratio: 1.5 / 1;
+border-radius: 6px;
+border: 1.5px solid rgba(0, 0, 0, 0.08);
+background-size: cover;
+background-position: center;
+box-sizing: border-box;
+transition: all 0.2s ease;
+box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+display: flex;
+justify-content: center;
+align-items: center;
+position: relative;
+overflow: hidden;
+}
+/* Efek Hover */
+.google-maps-card:hover .google-thumbnail {
+transform: scale(1.02);
+border-color: rgba(0, 86, 179, 0.2);
+}
+/* Teks Keterangan di Bawah Gambar */
+.google-label-text {
+margin-top: 2px;
+font-size: 9.5px;
+font-weight: 500;
+color: #555;
+transition: color 0.2s ease;
+line-height: 1.1;
+}
+/* LOGIKA JIKA DIPILIH (CHECKED) -> MENIRU GOOGLE MAPS */
+.google-card-input:checked + .google-maps-card .google-thumbnail {
+border: 2px solid #00a4ba; /* Warna cyan/biru khas Google Maps pilihan teraktif */
+transform: scale(0.96);
+box-shadow: 0 0 0 1px #ffffff, 0 2px 4px rgba(0,164,186,0.25);
+}
+.google-card-input:checked + .google-maps-card .google-label-text {
+color: #00a4ba;
+font-weight: bold;
+}
+/* ==========================================================================
+CSS LAYER TITIK SEBARAN KUSTOM PADA GAMBAR PETA DEFAULT
+========================================================================== */
+.map-bg-overlay {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background-image: url('https://mt1.google.com/vt/lyrs=m&x=1620&y=1043&z=11');
+background-size: cover;
+background-position: center;
+z-index: 1;
+opacity: 0.85;
+}
+.dots-container {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+z-index: 2;
+}
+/* Definisi Titik Titik Warna menggunakan Marker Mini Bundar */
+.dot {
+position: absolute;
+border-radius: 50%;
+border: 0.5px solid #ffffff;
+box-shadow: 0 0.5px 1.5px rgba(0,0,0,0.3);
+}
+.dot-gray { background-color: #808080; width: 4px; height: 4px; }
+.dot-green { background-color: #008000; width: 4px; height: 4px; }
+.dot-yellow { background-color: #ffcc00; width: 4px; height: 4px; }
+.dot-red { background-color: #ff0000; width: 4px; height: 4px; }
+/* Ukuran Variasi Khusus untuk Fokus Tunggal */
+.dot-large {
+width: 6px;
+height: 6px;
+box-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
+/* Animasi Denyut untuk Marker GPS Pengguna */
+@keyframes gpsPulse {
+0% { transform: scale(1); opacity: 0.6; }
+100% { transform: scale(2.6); opacity: 0; }
+}
+</style>
+</head>
+<body>
+<div id="splash-screen">
+<div class="splash-content">
+<h1 class="splash-title">LCWL 2.0</h1>
+<p class="splash-subtitle">LIVE CLOUD WATER LEVEL</p>
+<div class="spinner"></div>
+<small id="splash-status">MENGHUBUNGKAN KE SERVER CLOUD...</small>
+</div>
+</div>
+<input type="checkbox" id="menu-toggle">
+<label for="menu-toggle" class="hamburger-label">
+<span></span>
+<span></span>
+<span></span>
+</label>
+<div class="menu-drawer-container">
+<div id="upload-panel">
+<b style="color: #0056b3;">Koneksi Cloud Google:</b>
+<div style="line-height: 1.2;">
+<span style="color: green; font-weight: bold;">Otomatis Terhubung Live</span><br>
+<small style="color: #666; font-size: 10px;">Auto-Refresh: 10 detik</small>
+</div>
+<hr style="margin: 3px 0; border: 0; border-top: 1px dashed #0056b3; opacity: 0.3;">
+<b style="color: #444; font-size: 11px;">Jenis peta</b>
+<div class="basemap-grid-container">
+<input type="radio" id="bm-default" name="basemap-select" class="google-card-input" value="default" checked onchange="changeBaseMap(this.value)">
+<label for="bm-default" class="google-maps-card">
+<div class="google-thumbnail" style="background-image: url('https://mt1.google.com/vt/lyrs=m&x=1620&y=1043&z=11');"></div>
+<span class="google-label-text">Default</span>
+</label>
+<input type="radio" id="bm-satelit" name="basemap-select" class="google-card-input" value="satelit" onchange="changeBaseMap(this.value)">
+<label for="bm-satelit" class="google-maps-card">
+<div class="google-thumbnail" style="background-image: url('https://mt1.google.com/vt/lyrs=s&x=1620&y=1043&z=11');"></div>
+<span class="google-label-text">Satelit</span>
+</label>
+<input type="radio" id="bm-medan" name="basemap-select" class="google-card-input" value="medan" onchange="changeBaseMap(this.value)">
+<label for="bm-medan" class="google-maps-card">
+<div class="google-thumbnail" style="background-image: url('https://mt1.google.com/vt/lyrs=p&x=1620&y=1043&z=11');"></div>
+<span class="google-label-text">Medan</span>
+</label>
+</div>
+<hr style="margin: 3px 0; border: 0; border-top: 1px solid rgba(0,0,0,0.08);">
+<b style="color: #444; font-size: 11px;">Detail peta</b>
+<div class="detail-grid-container">
+<input type="radio" id="status-all" name="status-filter-select" class="google-card-input" value="ALL" checked onchange="setQuickStatusFilter(this.value)">
+<label for="status-all" class="google-maps-card">
+<div class="google-thumbnail">
+<div class="map-bg-overlay"></div>
+<div class="dots-container">
+<div class="dot dot-gray" style="top:25%; left:25%;"></div>
+<div class="dot dot-green" style="top:30%; left:65%;"></div>
+<div class="dot dot-yellow" style="top:65%; left:30%;"></div>
+<div class="dot dot-red" style="top:60%; left:70%;"></div>
+</div>
+</div>
+<span class="google-label-text">Semua</span>
+</label>
+<input type="radio" id="status-online" name="status-filter-select" class="google-card-input" value="ONLINE" onchange="setQuickStatusFilter(this.value)">
+<label for="status-online" class="google-maps-card">
+<div class="google-thumbnail">
+<div class="map-bg-overlay"></div>
+<div class="dots-container">
+<div class="dot dot-green" style="top:20%; left:50%;"></div>
+<div class="dot dot-yellow" style="top:60%; left:25%;"></div>
+<div class="dot dot-red" style="top:55%; left:65%;"></div>
+</div>
+</div>
+<span class="google-label-text">Online</span>
+</label>
+<input type="radio" id="status-offline" name="status-filter-select" class="google-card-input" value="OFFLINE" onchange="setQuickStatusFilter(this.value)">
+<label for="status-offline" class="google-maps-card">
+<div class="google-thumbnail">
+<div class="map-bg-overlay"></div>
+<div class="dots-container">
+<div class="dot dot-gray dot-large" style="top:40%; left:40%;"></div>
+</div>
+</div>
+<span class="google-label-text">Offline</span>
+</label>
+<input type="radio" id="status-aman" name="status-filter-select" class="google-card-input" value="AMAN" onchange="setQuickStatusFilter(this.value)">
+<label for="status-aman" class="google-maps-card">
+<div class="google-thumbnail">
+<div class="map-bg-overlay"></div>
+<div class="dots-container">
+<div class="dot dot-green dot-large" style="top:40%; left:40%;"></div>
+</div>
+</div>
+<span class="google-label-text">Aman</span>
+</label>
+<input type="radio" id="status-waspada" name="status-filter-select" class="google-card-input" value="WASPADA" onchange="setQuickStatusFilter(this.value)">
+<label for="status-waspada" class="google-maps-card">
+<div class="google-thumbnail">
+<div class="map-bg-overlay"></div>
+<div class="dots-container">
+<div class="dot dot-yellow dot-large" style="top:40%; left:40%;"></div>
+</div>
+</div>
+<span class="google-label-text">Waspada</span>
+</label>
+<input type="radio" id="status-bahaya" name="status-filter-select" class="google-card-input" value="BAHAYA" onchange="setQuickStatusFilter(this.value)">
+<label for="status-bahaya" class="google-maps-card">
+<div class="google-thumbnail">
+<div class="map-bg-overlay"></div>
+<div class="dots-container">
+<div class="dot dot-red dot-large" style="top:40%; left:40%;"></div>
+</div>
+</div>
+<span class="google-label-text">Bahaya</span>
+</label>
+</div>
+<hr style="margin: 3px 0; border: 0; border-top: 1px dashed #0056b3; opacity: 0.3;">
+<div style="background: rgba(0,86,179,0.06); padding: 5px; border-radius: 4px; border-left: 3px solid #0056b3; line-height: 1.3;">
+<span style="font-size: 10.5px; color: #555; font-weight: bold;">Monitoring Stasiun:</span><br>
+<div id="total-registered" style="font-size: 10.5px; color: #000000;">?? Perangkat Terdaftar: <span style="font-weight: bold;">0</span></div>
+<div id="total-online" style="font-size: 10.5px; color: #008000;">? Perangkat Online: <span style="font-weight: bold;">0</span></div>
+<div id="total-offline" style="font-size: 10.5px; color: #ff0000;">? Perangkat Offline: <span style="font-weight: bold;">0</span></div>
+</div>
+<b style="color: #444; font-size: 11px;">Pencarian Pintar:</b>
+<input type="text" id="filter-search" placeholder="Ketik PSM atau Estate..." style="width: 93%; margin-top: 2px; padding: 4px; border-radius: 4px; border: 1px solid #aaa; background: rgba(255,255,255,0.4); font-size: 11px;" onkeyup="applySmartFilter()">
+<small style="color: #888; font-size: 9px; display: block; margin-top: 1px;">Cari: <i>PSM 1</i> atau <i>Estate A</i></small>
+</div>
+<div id="debug-panel">
+<b style="color: #0056b3; font-size: 11.5px;">Status WebGIS:</b>
+<hr style="margin: 3px 0; border:0; border-top:1px solid #ddd;">
+<div id="debug-text" style="font-size: 10.5px;">Menghubungkan ke cloud server Google Sheet...</div>
+</div>
+</div>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const SPREADSHEET_ID = "12YVGi7-rCuTd1n2G8ZRA5GYo79RuznWvq1m2iyPb4OQ";
+const SHEET_GID = "1499191826";
+
+var map = L.map('map').setView([0, 0], 2); 
+let isFirstLoad = true; 
+let currentCloudData = null; 
+let selectedStatusFilter = "ALL"; // Menyimpan state filter tombol detail peta aktif
+
+// ==========================================================================
+// DEFINISI LAYER MAPS (GOOGLE SERVER)
+// ==========================================================================
+var googleDefault = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+attribution: '© Google Maps Streets'
+}).addTo(map); 
+
+var googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+attribution: '© Google Maps Hybrid'
+});
+
+var googleMedan = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+attribution: '© Google Maps Terrain'
+});
+
+const baseLayers = {
+'default': googleDefault,
+'satelit': googleSatellite,
+'medan': googleMedan
+};
+
+var markerGroup = L.layerGroup().addTo(map);
+
+// ==========================================================================
+// PERBAIKAN UTAMA: MEMBUAT PANE KUSTOM KHUSUS DI ATAS GOOGLE MAPS
+// ==========================================================================
+map.createPane('userGpsPane');
+map.getPane('userGpsPane').style.zIndex = 650; // Z-Index tinggi melewati layer tile Google
+map.getPane('userGpsPane').style.pointerEvents = 'none';
+
+// Mengubah pane ke 'userGpsPane' agar penanda user mutlak berada di tumpukan paling atas
+var userLocationLayer = L.layerGroup([], { pane: 'userGpsPane' }).addTo(map);
+
+function changeBaseMap(layerKey) {
+for (let key in baseLayers) {
+if (map.hasLayer(baseLayers[key])) {
+map.removeLayer(baseLayers[key]);
+}
+}
+if (baseLayers[layerKey]) {
+baseLayers[layerKey].addTo(map);
+}
+}
+
+// Fungsi Pengendali Filter Cepat Detail Peta
+function setQuickStatusFilter(statusValue) {
+selectedStatusFilter = statusValue;
+applySmartFilter(); 
+}
+
+function parseToValidCoord(valRaw, isLongitude) {
+if (!valRaw) return null;
+let cleanStr = valRaw.toString().replace(/\s/g, '');
+if (cleanStr.includes(',') && !cleanStr.includes('.')) {
+cleanStr = cleanStr.replace(/,/g, '.');
+} else if (cleanStr.includes('.') && cleanStr.includes(',')) {
+cleanStr = cleanStr.replace(/\./g, '').replace(/,/g, '.');
+}
+let num = parseFloat(cleanStr);
+if (isNaN(num)) return null;
+if (isLongitude) {
+if (num > 180) {
+while (num > 180) num = num / 10;
+}
+} else {
+if (num < -90) {
+while (num < -90) num = num / 10;
+}
+}
+return num;
+}
+
+function dapatkanObjekWaktu(rawDateStr) {
+if (!rawDateStr) return null;
+if (rawDateStr.toString().includes("Date(")) {
+try {
+let matches = rawDateStr.toString().match(/\d+/g);
+if (matches && matches.length >= 3) {
+let y = parseInt(matches[0]);
+let m = parseInt(matches[1]); 
+let d = parseInt(matches[2]);
+let j = parseInt(matches[3] || "0");
+let mn = parseInt(matches[4] || "0");
+let det = parseInt(matches[5] || "0");
+return new Date(y, m, d, j, mn, det);
+}
+} catch(e){}
+}
+let dObj = new Date(rawDateStr);
+return isNaN(dObj.getTime()) ? null : dObj;
+}
+
+function getValByKey(dataObj, keyName) {
+const target = keyName.toLowerCase().trim();
+for (let key in dataObj) {
+if (key.toLowerCase().trim() === target) {
+return dataObj[key] !== null && dataObj[key] !== undefined ? dataObj[key] : "";
+}
+}
+return "";
+}
+
+function formatWaktuIndo(rawDateStr) {
+let dateObj = dapatkanObjekWaktu(rawDateStr);
+if (!dateObj) return rawDateStr || "Baru Saja";
+let d = dateObj.getDate().toString().padStart(2, '0');
+let m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+let y = dateObj.getFullYear();
+let j = dateObj.getHours().toString().padStart(2, '0');
+let mn = dateObj.getMinutes().toString().padStart(2, '0');
+let det = dateObj.getSeconds().toString().padStart(2, '0');
+return `${d}-${m}-${y} ${j}:${mn}:${det}`;
+}
+
+function fetchOnlineData() {
+const oldScript = document.getElementById('google-sheet-trigger');
+if (oldScript) oldScript.remove();
+const nocache = new Date().getTime();
+const jsonpUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?gid=${SHEET_GID}&tqx=responseHandler:processCloudData&tq_nocache=${nocache}`;
+const script = document.createElement('script');
+script.id = 'google-sheet-trigger';
+script.src = jsonpUrl;
+script.onerror = function() {
+const debugDiv = document.getElementById('debug-text');
+if (debugDiv) {
+debugDiv.innerHTML = "<span style='color:red;'>Gagal memuat data online! Periksa setelan Publikasi Google Sheet Anda.</span>";
+}
+};
+document.body.appendChild(script);
+}
+
+function processCloudData(response) {
+const debugDiv = document.getElementById('debug-text');
+if (!response || !response.table || !response.table.rows || response.table.rows.length === 0) {
+if (debugDiv) {
+debugDiv.innerHTML = "<span style='color:red;'>Struktur data spreadsheet tidak dikenali atau kosong!</span>";
+}
+return;
+}
+const headers = response.table.cols.map(col => (col.label || "").toLowerCase().trim());
+const rowValues = response.table.rows[0].c;
+const dataAlat = {};
+headers.forEach((headerName, index) => {
+if (headerName && rowValues[index]) {
+dataAlat[headerName] = rowValues[index].f ? rowValues[index].f : (rowValues[index].v !== null ? rowValues[index].v : "");
+}
+});
+currentCloudData = {
+device_id: getValByKey(dataAlat, "device_id"),
+nama_titik: getValByKey(dataAlat, "nama_titik") || "Device Water Level",
+psm: getValByKey(dataAlat, "psm"),
+estate: getValByKey(dataAlat, "estate"),
+divisi: getValByKey(dataAlat, "divisi"),
+blok: getValByKey(dataAlat, "blok"),
+status: getValByKey(dataAlat, "status") || "Aman",
+latitude: getValByKey(dataAlat, "latitude"),
+longitude: getValByKey(dataAlat, "longitude"),
+tinggi_muka_air: getValByKey(dataAlat, "tinggi_muka_air"),
+elevasi_muka_air: getValByKey(dataAlat, "elevasi_muka_air"),
+jarak: getValByKey(dataAlat, "jarak"),
+kecepatan: getValByKey(dataAlat, "kecepatan"),
+kategori_perubahan: getValByKey(dataAlat, "kategori_perubahan"),
+time_forecast: getValByKey(dataAlat, "time_forecast"),
+created_at: getValByKey(dataAlat, "created_at")
+};
+const splashStatus = document.getElementById('splash-status');
+if (splashStatus) splashStatus.innerHTML = "DATA ONLINE BERHASIL SINKRON!";
+applySmartFilter();
+}
+
+function applySmartFilter() {
+if (!currentCloudData) return;
+const debugDiv = document.getElementById('debug-text');
+const keyword = document.getElementById('filter-search').value.toUpperCase().trim();
+const attr = currentCloudData;
+const targetRegistered = document.getElementById('total-registered');
+const targetOnline = document.getElementById('total-online');
+const targetOffline = document.getElementById('total-offline');
+let statusAlatOffline = false;
+let waktuSistemSekarang = new Date();
+let waktuDataTerakhir = dapatkanObjekWaktu(attr.created_at);
+if (waktuDataTerakhir) {
+let selisihWaktuJam = Math.abs(waktuSistemSekarang - waktuDataTerakhir) / (1000 * 60 * 60);
+if (selisihWaktuJam > 1.0) {
+statusAlatOffline = true;
+}
+}
+const statusStr = (attr.status || "").toString().toUpperCase();
+if (statusStr.includes("OFFLINE")) {
+statusAlatOffline = true;
+}
+if (attr.latitude && attr.longitude) {
+if (targetRegistered) targetRegistered.innerHTML = `Perangkat Terdaftar: <span style="font-weight: bold; color: #000000;">1</span>`;
+if (statusAlatOffline) {
+if (targetOnline) targetOnline.innerHTML = `Perangkat Online: <span style="font-weight: bold; color: #008000;">0</span>`;
+if (targetOffline) targetOffline.innerHTML = `Perangkat Offline: <span style="font-weight: bold; color: #ff0000;">1 (di atas 1 Jam)</span>`;
+} else {
+if (targetOnline) targetOnline.innerHTML = `Perangkat Online: <span style="font-weight: bold; color: #008000;">1</span>`;
+if (targetOffline) targetOffline.innerHTML = `Perangkat Offline: <span style="font-weight: bold; color: #ff0000;">0</span>`;
+}
+} else {
+if (targetRegistered) targetRegistered.innerHTML = `Perangkat Terdaftar: <span style="font-weight: bold; color: #000000;">0</span>`;
+if (targetOnline) targetOnline.innerHTML = `Perangkat Online: <span style="font-weight: bold; color: #008000;">0</span>`;
+if (targetOffline) targetOffline.innerHTML = `Perangkat Offline: <span style="font-weight: bold; color: #ff0000;">0</span>`;
+}
+// LOGIKA EVALUASI MULTI-FILTER (KATA KUNCI INPUT & KLIK TOMBOL DETAIL PETA)
+let lolosFilterKombinasi = true;
+
+// 1. Validasi Input teks Pencarian Pintar (HANYA PSM & ESTATE)
+const psmStr = (attr.psm || "").toString().toUpperCase();
+const estateStr = (attr.estate || "").toString().toUpperCase();
+if (keyword !== "" && !psmStr.includes(keyword) && !estateStr.includes(keyword)) {
+lolosFilterKombinasi = false;
+}
+
+// 2. Validasi klik tombol Detail Peta (Quick Status Filter)
+if (selectedStatusFilter !== "ALL") {
+if (selectedStatusFilter === "ONLINE" && statusAlatOffline) lolosFilterKombinasi = false;
+else if (selectedStatusFilter === "OFFLINE" && !statusAlatOffline) lolosFilterKombinasi = false;
+else if (selectedStatusFilter === "AMAN" && (statusAlatOffline || !statusStr.includes("AMAN"))) lolosFilterKombinasi = false;
+else if (selectedStatusFilter === "WASPADA" && (statusAlatOffline || !statusStr.includes("WASPADA"))) lolosFilterKombinasi = false;
+else if (selectedStatusFilter === "BAHAYA" && (statusAlatOffline || !statusStr.includes("BAHAYA"))) lolosFilterKombinasi = false;
+}
+if (lolosFilterKombinasi && attr.latitude && attr.longitude) {
+const lat = parseToValidCoord(attr.latitude, false);
+const lng = parseToValidCoord(attr.longitude, true);
+const waktuBersih = formatWaktuIndo(attr.created_at);
+if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><span style='color:green; font-weight:bold;'>Berhasil Plotting ke Peta</span>`;
+if (lat !== null && lng !== null) {
+markerGroup.clearLayers();
+let warnaMarker = "green";
+if (statusAlatOffline) {
+warnaMarker = "#808080";
+} else {
+if (statusStr.includes("WASPADA")) warnaMarker = "orange";
+if (statusStr.includes("BAHAYA")) warnaMarker = "red";
+}
+var liveMarker = L.circleMarker([lat, lng], {
+radius: 15,
+fillColor: warnaMarker,
+color: "#ffffff",
+weight: 3,
+opacity: 1,
+fillOpacity: 0.9
+}).addTo(markerGroup);
+let popupContent = `
+<div class="popup-scroll-container">
+<strong style="font-size: 14px; color: #0056b3;"> ${attr.nama_titik}</strong><br>
+<table class="popup-table">
+<tr><td class="label-col">1. Device ID</td><td>${attr.device_id}</td></tr>
+<tr><td class="label-col">2. Nama Titik</td><td>${attr.nama_titik}</td></tr>
+<tr><td class="label-col">3. PSM</td><td><b>${attr.psm}</b></td></tr>
+<tr><td class="label-col">4. Estate</td><td><b>${attr.estate}</b></td></tr>
+<tr><td class="label-col">5. Divisi</td><td>${attr.divisi}</td></tr>
+<tr><td class="label-col">6. Blok</td><td>${attr.blok}</td></tr>
+<tr><td class="label-col">7. Status</td><td><b style="color:${warnaMarker};">${statusAlatOffline ? 'OFFLINE (di atas 1 Jam)' : attr.status}</b></td></tr>
+<tr><td class="label-col">8. Latitude</td><td>${lat.toFixed(6)}</td></tr>
+<tr><td class="label-col">9. Longitude</td><td>${lng.toFixed(6)}</td></tr>
+<tr><td class="label-col">10. T. Muka Air</td><td><b>${attr.tinggi_muka_air} cm</b></td></tr>
+<tr><td class="label-col">11. E. Muka Air</td><td><b>${attr.elevasi_muka_air} m</b></td></tr>
+<tr><td class="label-col">12. Jarak Sensor</td><td>${attr.jarak} cm</td></tr>
+<tr><td class="label-col">13. Kecepatan</td><td><b>${attr.kecepatan} cm/jam</b></td></tr>
+<tr><td class="label-col">14. Perubahan</td><td>${attr.kategori_perubahan}</td></tr>
+<tr><td class="label-col">15. Time Forecast</td><td>${attr.time_forecast}</td></tr>
+<tr><td class="label-col">16. Created At</td><td><b style="color: #444;">${waktuBersih}</b></td></tr>
+</table>
+</div>
+`;
+liveMarker.bindPopup(popupContent);
+if (isFirstLoad) {
+map.setView([lat, lng], 12); 
+isFirstLoad = false;
+}
+}
+} else {
+markerGroup.clearLayers();
+if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><span style='color:orange; font-weight:bold;'>Data Disembunyikan Filter</span><br><small style='color:#666;'>Filter Aktif: ${selectedStatusFilter}</small>`;
+}
+}
+
+// ==========================================================================
+// FUNGSIONALITAS PELACAKAN LOKASI GPS PENGGUNA (OPTIMALKAN NEGOSIASI GPS/IP)
+// ==========================================================================
+map.locate({
+setView: false, 
+watch: true, 
+enableHighAccuracy: true,
+timeout: 10000 // Menunggu sinyal GPS maksimal 10 detik sebelum melempar eror
+});
+
+map.on('locationfound', function(e) {
+userLocationLayer.clearLayers();
+
+// Render marker titik biru khas Google Maps dengan efek denyut CSS
+var userIcon = L.divIcon({
+className: 'user-gps-marker',
+html: '<div style="background-color: #007bff; width: 14px; height: 14px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,123,255,0.8); position: relative;">' +
+'<div style="position: absolute; top: -3px; left: -3px; width: 14px; height: 14px; border-radius: 50%; border: 3px solid #007bff; animation: gpsPulse 2s infinite; opacity: 0.5;"></div>' +
+'</div>',
+iconSize: [14, 14],
+iconAnchor: [7, 7]
+});
+
+// Menambahkan penanda lokasi real-time dengan pemaksaan zIndexOffset tinggi agar selalu di atas
+L.marker(e.latlng, { icon: userIcon, zIndexOffset: 1000 })
+.addTo(userLocationLayer)
+.bindPopup("<div style='font-size:11px; font-weight:bold; color:#0056b3; text-align:center;'>Posisi Anda Saat Ini</div>");
+});
+
+// Sistem Notifikasi Alert jika sistem hardware/browser menolak memberikan lokasi
+map.on('locationerror', function(e) {
+const statusDebug = document.getElementById('debug-text');
+if (statusDebug) {
+statusDebug.innerHTML = `<span style='color:orange; font-weight:bold;'>GPS Device: ${e.message}</span>`;
+}
+console.log("Akses Geolocation bermasalah: " + e.message);
+});
+
+fetchOnlineData();
+setInterval(fetchOnlineData, 10000);
+
+setTimeout(function() {
+const splash = document.getElementById('splash-screen');
+if (splash) {
+splash.style.opacity = '0';
+setTimeout(function() {
+splash.remove();
+}, 600);
+}
+}, 2000);
+</script>
+</body>
+</html>
