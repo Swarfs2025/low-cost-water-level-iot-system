@@ -248,9 +248,9 @@ display: flex;
 flex-direction: column;
 gap: 6px; 
 
-/* PERBAIKAN: Menonaktifkan semua default swipe gesture browser pada box kontainer popup */
-touch-action: none;
-overscroll-behavior: none;
+/* PERBAIKAN STABILITAS: Mengizinkan manipulasi sentuh normal secara spesifik dan memotong perambatan event */
+touch-action: auto;
+overscroll-behavior: contain;
 }
 #bottom-attribute-panel.active {
 bottom: 0;
@@ -281,9 +281,10 @@ background: #fff;
 border: 1px solid #ddd;
 border-radius: 4px;
 
-/* PERBAIKAN: Memisahkan rantai scroll internal tabel agar ketika mentok tidak menarik body utama */
+/* PERBAIKAN: Memisahkan secara tegas arah scroll dan mengisolasi penuh agar tidak bocor ke container maps */
 touch-action: pan-x pan-y;
 overscroll-behavior: contain;
+-webkit-overflow-scrolling: touch;
 }
 .grid-table {
 width: 100%;
@@ -1133,4 +1134,4 @@ fetchOnlineData();
 setInterval(fetchOnlineData, 10000);
 </script>
 </body>
-</html>```
+</html>
