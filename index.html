@@ -13,6 +13,7 @@ height: 100vh;
 width: 100%; 
 position: relative;
 z-index: 1; 
+background-color: #aad3df; /* Warna samudera ala Google Maps agar saat zoom out tidak kosong */
 }
 body { 
 margin: 0; 
@@ -195,7 +196,7 @@ flex-shrink: 0;
 #debug-panel { padding: 5px 8px; font-size: 10px; }
 .google-label-text { font-size: 9px !important; }
 .google-thumbnail { aspect-ratio: 1.4 / 1 !important; border-radius: 6px !important; }
-#bottom-attribute-panel { width: 100% !important; height: 260px !important; border-radius: 0 !important; }
+#bottom-attribute-panel { width: 100% !important; height: 320px !important; border-radius: 0 !important; }
 }
 .popup-table {
 width: 100%;
@@ -225,12 +226,12 @@ STRUKTUR BARU: DESAIN PANEL ATRIBUT HORIZONTAL BAWAH LAYAR
 ========================================================================== */
 #bottom-attribute-panel {
 position: absolute;
-bottom: -300px;
+bottom: -350px;
 left: 50%;
 transform: translateX(-50%);
 width: 90%;
 max-width: 900px;
-height: 240px;
+height: 290px; /* Sedikit disesuaikan untuk menampung info rute */
 background: rgba(255, 255, 255, 0.92);
 backdrop-filter: blur(10px);
 -webkit-backdrop-filter: blur(10px);
@@ -295,10 +296,15 @@ BARU: CSS EDITAN PIL-SHAPE PREMIUM (GOOGLE MAPS REAL PANEL STYLE)
 ========================================================================== */
 .navigation-action-bar {
 display: flex;
-gap: 10px;
+flex-direction: column; /* Ditumpuk vertical agar info rute berada di atas tombol */
+gap: 6px;
 margin-top: 8px;
 border-top: 1px solid rgba(0,0,0,0.06);
 padding-top: 8px;
+}
+.buttons-wrapper {
+display: flex;
+gap: 10px;
 }
 .nav-btn {
 display: inline-flex;
@@ -308,14 +314,13 @@ gap: 6px;
 padding: 8px 18px;
 font-size: 13px;
 font-weight: bold;
-border-radius: 50px; /* Bentuk Kapsul/Pill Sempurna */
+border-radius: 50px; 
 border: none;
 cursor: pointer;
 transition: all 0.2s ease;
 box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 font-family: inherit;
 }
-/* Kustomisasi Tombol Rute (Teal Tua) */
 .btn-google-rute {
 background-color: #007a87;
 color: #ffffff;
@@ -330,22 +335,31 @@ display: flex;
 align-items: center;
 justify-content: center;
 }
-/* Kustomisasi Tombol Mulai & Bagikan (Biru Muda / Teal Cerah) */
 .btn-google-light {
 background-color: #e1f5fe;
 color: #004d61;
 }
 .icon-container-mulai {
-transform: rotate(45deg); /* Memutar anak panah condong kanan atas */
+transform: rotate(45deg); 
 font-size: 12px;
 }
-/* Animasi Feedback Klik */
 .nav-btn:hover {
 opacity: 0.9;
 transform: translateY(-1px);
 }
 .nav-btn:active {
 transform: translateY(0);
+}
+/* DESAIN WADAH LIVE INFO RUTE (DI POPUP BAWAH) */
+.live-route-info-box {
+display: none; /* Tersembunyi default, muncul saat rute aktif */
+padding: 6px 12px;
+background-color: rgba(0, 122, 135, 0.08);
+border-left: 4px solid #007a87;
+border-radius: 4px;
+font-size: 12px;
+font-weight: bold;
+color: #004d61;
 }
 /* ==========================================================================
 DESAIN LAYOUT GRID JENIS PETA & DETAIL PETA (GOOGLE MAPS STYLE)
@@ -458,7 +472,33 @@ box-shadow: 0 0 2px rgba(0,0,0,0.5);
 0% { transform: scale(1); opacity: 0.6; }
 100% { transform: scale(2.6); opacity: 0; }
 }
-/* Sembunyikan boks petunjuk tulisan bawaan dari plugin agar peta WebGIS tetap bersih */
+/* ANIMASI DENYUT RADAR PROPOSIONAL UNTUK STASIUN IOT ALAT */
+@keyframes radarPulse {
+0% { transform: scale(0.6); opacity: 1; }
+100% { transform: scale(2.6); opacity: 0; }
+}
+.radar-marker-element {
+position: relative;
+width: 16px;
+height: 16px;
+border-radius: 50%;
+border: 2px solid #ffffff;
+box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.radar-marker-element::after {
+content: '';
+position: absolute;
+top: -2px;
+left: -2px;
+width: 16px;
+height: 16px;
+border-radius: 50%;
+border: 2px solid inherit;
+background-color: inherit;
+animation: radarPulse 1.8s infinite ease-out;
+opacity: 0.4;
+z-index: -1;
+}
 .leaflet-routing-container {
 display: none !important;
 }
@@ -625,26 +665,43 @@ display: none !important;
 </div>
 
 <div class="navigation-action-bar">
+<div id="live-route-info" class="live-route-info-box">
+<i class="fa-solid fa-car-side" style="margin-right: 4px;"></i> Jarak Tempuh: <span id="route-distance-val" style="color:#007a87;">-</span> 
+<span style="margin: 0 10px; color:#ccc;">|</span>
+<i class="fa-solid fa-stopwatch" style="margin-right: 4px;"></i> Waktu: <span id="route-time-val" style="color:#007a87;">-</span>
+</div>
+<div class="buttons-wrapper">
 <button id="btn-maps-route" class="nav-btn btn-google-rute">
-  <span class="icon-container-rute"><i class="fa-solid fa-diamond-turn-right"></i></span> Rute
+<span class="icon-container-rute"><i class="fa-solid fa-diamond-turn-right"></i></span> Rute
 </button>
 <button id="btn-maps-start" class="nav-btn btn-google-light">
-  <i class="fa-solid fa-location-arrow icon-container-mulai"></i> Mulai
+<i class="fa-solid fa-location-arrow icon-container-mulai"></i> Mulai
 </button>
 <button id="btn-maps-share" class="nav-btn btn-google-light" onclick="jalankanFiturShare()">
-  <i class="fa-solid fa-share-nodes"></i> Bagikan
+<i class="fa-solid fa-share-nodes"></i> Bagikan
 </button>
+</div>
 </div>
 </div>
 
 <div id="map"></div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 <script>
 const SPREADSHEET_ID = "12YVGi7-rCuTd1n2G8ZRA5GYo79RuznWvq1m2iyPb4OQ";
 const SHEET_GID = "1499191826";
 
-var map = L.map('map').setView([0, 0], 2); 
+// KUNCI BOUNDS DUNIA AGAR NAVIGASI EMULSI SEPERTI GOOGLE MAPS ASLI SAAT ZOOM OUT
+var map = L.map('map', {
+    worldCopyJump: false,
+    maxBounds: [
+        [-90, -180], 
+        [90, 180]    
+    ],
+    maxBoundsViscosity: 1.0 
+}).setView([0, 0], 2); 
+
 let isFirstLoad = true; 
 let currentCloudData = null; 
 let selectedStatusFilter = "ALL"; 
@@ -888,21 +945,23 @@ const waktuBersih = formatWaktuIndo(attr.created_at);
 if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><span style='color:green; font-weight:bold;'>Berhasil Plotting ke Peta</span>`;
 if (lat !== null && lng !== null) {
 markerGroup.clearLayers();
-let warnaMarker = "green";
+let warnaMarker = "#008000"; // Hijau asli hex
 if (statusAlatOffline) {
 warnaMarker = "#808080";
 } else {
-if (statusStr.includes("WASPADA")) warnaMarker = "orange";
-if (statusStr.includes("BAHAYA")) warnaMarker = "red";
+if (statusStr.includes("WASPADA")) warnaMarker = "#ffcc00";
+if (statusStr.includes("BAHAYA")) warnaMarker = "#ff0000";
 }
-var liveMarker = L.circleMarker([lat, lng], {
-radius: 15,
-fillColor: warnaMarker,
-color: "#ffffff",
-weight: 3,
-opacity: 1,
-fillOpacity: 0.9
-}).addTo(markerGroup);
+
+// UPDATE: MARKER KUSTOM DENGAN ANIMASI DENYUT RADAR PROPOSIONAL
+var radarIcon = L.divIcon({
+    className: 'radar-marker-wrapper',
+    html: `<div class="radar-marker-element" style="background-color: ${warnaMarker}; border-color: #ffffff;"></div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
+});
+
+var liveMarker = L.marker([lat, lng], { icon: radarIcon }).addTo(markerGroup);
 
 liveMarker.on('click', function() {
 document.getElementById('panel-device-title').innerText = `Detail Atribut: ${attr.nama_titik}`;
@@ -972,7 +1031,7 @@ router: L.Routing.osrmv1({
 serviceUrl: 'https://router.project-osrm.org/route/v1' 
 }),
 lineOptions: {
-styles: [{ color: '#1a73e8', opacity: 0.85, weight: 6 }]
+styles: [{ color: '#007a87', opacity: 0.85, weight: 6 }] // Warna rute diselaraskan ke teal tua Google style
 },
 createMarker: function() { return null; } 
 }).addTo(map);
@@ -988,7 +1047,11 @@ var jam = Math.floor(waktuMenit / 60);
 var sisaMenit = waktuMenit % 60;
 teksWaktu = jam + " jam " + sisaMenit + " menit";
 }
-alert(`??? Rute Berhasil Ditemukan!\n?? Jarak Tempuh: ${jarakKm} Km\n?? Perkiraan Waktu: ${teksWaktu}`);
+
+// UPDATE: MENGHAPUS ALERT() DAN MENGISI DATA KE WADAH PANEL BAWAH
+document.getElementById('route-distance-val').innerText = jarakKm + " Km";
+document.getElementById('route-time-val').innerText = teksWaktu;
+document.getElementById('live-route-info').style.display = "block";
 });
 }
 
@@ -997,6 +1060,7 @@ if (internalRoutingControl) {
 map.removeControl(internalRoutingControl);
 internalRoutingControl = null;
 }
+document.getElementById('live-route-info').style.display = "none";
 }
 
 function jalankanFiturShare() {
