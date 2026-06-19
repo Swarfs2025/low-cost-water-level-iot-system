@@ -997,7 +997,6 @@ if (internalRoutingControl) {
 bersihkanRuteInternal();
 } else {
 prosesRuteJalanInternal(lat, lng);
-map.panTo(currentPositionUser || [lat, lng]);
 }
 };
 
@@ -1055,6 +1054,16 @@ teksWaktu = jam + " jam " + sisaMenit + " menit";
 document.getElementById('route-distance-val').innerText = jarakKm + " Km";
 document.getElementById('route-time-val').innerText = teksWaktu;
 document.getElementById('live-route-info').style.display = "block";
+
+// OTOMATIS ZOOM PETA AGAR TITIK GPS USER DAN STASIUN TUJUAN TERLIHAT DENGAN JELAS
+var bounds = L.latLngBounds([
+[currentPositionUser.lat, currentPositionUser.lng],
+[destLat, destLng]
+]);
+map.fitBounds(bounds, {
+padding: [50, 50], // Memberikan ruang aman 50 piksel di tepi layar APK agar tidak mepet
+maxZoom: 16        // Mencegah peta terlalu zoom in ekstrim jika jarak Anda sangat dekat dengan alat
+});
 });
 }
 
@@ -1127,11 +1136,9 @@ console.log("Akses Geolocation bermasalah: " + e.message);
 // ==========================================================================
 const panelAtributElemen = document.getElementById('bottom-attribute-panel');
 if (panelAtributElemen) {
-    // Matikan propagasi standar bawaan Leaflet
     L.DomEvent.disableScrollPropagation(panelAtributElemen);
     L.DomEvent.disableClickPropagation(panelAtributElemen);
     
-    // Matikan fitur dragging peta saat area panel bawah mulai disentuh jari
     panelAtributElemen.addEventListener('touchstart', function(e) {
         const isInsideTable = e.target.closest('.table-responsive-container');
         if (!isInsideTable) {
@@ -1139,26 +1146,21 @@ if (panelAtributElemen) {
         }
     }, { passive: false });
 
-    // Blokir pergerakan liar touchmove agar efek elastis WebView Android tidak menarik peta
     panelAtributElemen.addEventListener('touchmove', function(e) {
         const container = document.querySelector('.table-responsive-container');
         const isInsideTable = e.target.closest('.table-responsive-container');
 
         if (isInsideTable) {
-            // Jika jari bergerak di dalam tabel, izinkan scroll jika konten meluap (overflow)
             const isScrollable = container.scrollHeight > container.clientHeight;
             if (isScrollable) {
                 e.stopPropagation();
                 return; 
             }
         }
-        
-        // Cegah APK melakukan pull-to-refresh bawaan sistem Android WebView
         e.preventDefault();
         e.stopPropagation();
     }, { passive: false });
 
-    // Aktifkan kembali drag peta saat jari diangkat dari panel bawah
     panelAtributElemen.addEventListener('touchend', function() {
         map.dragging.enable();
     });
