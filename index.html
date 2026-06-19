@@ -196,7 +196,7 @@ flex-shrink: 0;
 #debug-panel { padding: 5px 8px; font-size: 10px; }
 .google-label-text { font-size: 9px !important; }
 .google-thumbnail { aspect-ratio: 1.4 / 1 !important; border-radius: 6px !important; }
-#bottom-attribute-panel { width: 100% !important; height: 320px !important; border-radius: 0 !important; }
+#bottom-attribute-panel { width: 100% !important; height: auto !important; max-height: 320px !important; border-radius: 0 !important; }
 }
 .popup-table {
 width: 100%;
@@ -222,7 +222,7 @@ min-width: 260px;
 padding-right: 5px;
 }
 /* ==========================================================================
-STRUKTUR BARU: DESAIN PANEL ATRIBUT HORIZONTAL BAWAH LAYAR
+STRUKTUR BARU: DESAIN PANEL ATRIBUT HORIZONTAL BAWAH LAYAR (OPTIMAL SPACE)
 ========================================================================== */
 #bottom-attribute-panel {
 position: absolute;
@@ -231,18 +231,20 @@ left: 50%;
 transform: translateX(-50%);
 width: 90%;
 max-width: 900px;
-height: 290px; /* Sedikit disesuaikan untuk menampung info rute */
+height: auto; /* Mengikuti tinggi konten agar tidak menyisakan ruang kosong */
+max-height: 280px; /* Batas tinggi maksimal agar tidak menutupi layar */
 background: rgba(255, 255, 255, 0.92);
 backdrop-filter: blur(10px);
 -webkit-backdrop-filter: blur(10px);
 z-index: 1000;
 border-radius: 12px 12px 0 0;
 box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
-padding: 12px;
+padding: 10px 12px 6px 12px; /* Padding bawah diperkecil */
 box-sizing: border-box;
 transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 display: flex;
 flex-direction: column;
+gap: 4px; /* Jarak antar elemen dibuat proporsional dan padat */
 }
 #bottom-attribute-panel.active {
 bottom: 0;
@@ -251,9 +253,9 @@ bottom: 0;
 display: flex;
 justify-content: space-between;
 align-items: center;
-margin-bottom: 6px;
+margin-bottom: 2px;
 border-bottom: 1.5px solid #0056b3;
-padding-bottom: 4px;
+padding-bottom: 2px;
 }
 .close-panel-btn {
 background: none;
@@ -262,12 +264,14 @@ font-size: 18px;
 font-weight: bold;
 color: #ff0000;
 cursor: pointer;
+line-height: 1;
 }
 .table-responsive-container {
 overflow-x: auto;
 overflow-y: auto;
 flex: 1;
 width: 100%;
+max-height: 120px; /* Membatasi tinggi tabel agar layout tetap ringkas */
 }
 .grid-table {
 width: 100%;
@@ -278,13 +282,13 @@ white-space: nowrap;
 .grid-table th {
 background: #0056b3;
 color: white;
-padding: 6px 8px;
+padding: 5px 8px;
 text-align: left;
 position: sticky;
 top: 0;
 }
 .grid-table td {
-padding: 6px 8px;
+padding: 5px 8px;
 border-bottom: 1px solid #ddd;
 color: #222;
 }
@@ -296,23 +300,23 @@ BARU: CSS EDITAN PIL-SHAPE PREMIUM (GOOGLE MAPS REAL PANEL STYLE)
 ========================================================================== */
 .navigation-action-bar {
 display: flex;
-flex-direction: column; /* Ditumpuk vertical agar info rute berada di atas tombol */
-gap: 6px;
-margin-top: 8px;
+flex-direction: column; 
+gap: 4px;
+margin-top: 4px;
 border-top: 1px solid rgba(0,0,0,0.06);
-padding-top: 8px;
+padding-top: 4px;
 }
 .buttons-wrapper {
 display: flex;
-gap: 10px;
+gap: 8px;
 }
 .nav-btn {
 display: inline-flex;
 align-items: center;
 justify-content: center;
 gap: 6px;
-padding: 8px 18px;
-font-size: 13px;
+padding: 6px 16px; /* Padding tombol diperkecil agar tidak memakan ruang bawah */
+font-size: 12.5px;
 font-weight: bold;
 border-radius: 50px; 
 border: none;
@@ -352,14 +356,15 @@ transform: translateY(0);
 }
 /* DESAIN WADAH LIVE INFO RUTE (DI POPUP BAWAH) */
 .live-route-info-box {
-display: none; /* Tersembunyi default, muncul saat rute aktif */
-padding: 6px 12px;
+display: none; 
+padding: 4px 10px;
 background-color: rgba(0, 122, 135, 0.08);
 border-left: 4px solid #007a87;
 border-radius: 4px;
-font-size: 12px;
+font-size: 11.5px;
 font-weight: bold;
 color: #004d61;
+margin-bottom: 2px;
 }
 /* ==========================================================================
 DESAIN LAYOUT GRID JENIS PETA & DETAIL PETA (GOOGLE MAPS STYLE)
@@ -692,7 +697,6 @@ display: none !important;
 const SPREADSHEET_ID = "12YVGi7-rCuTd1n2G8ZRA5GYo79RuznWvq1m2iyPb4OQ";
 const SHEET_GID = "1499191826";
 
-// KUNCI BOUNDS DUNIA AGAR NAVIGASI EMULSI SEPERTI GOOGLE MAPS ASLI SAAT ZOOM OUT
 var map = L.map('map', {
     worldCopyJump: false,
     maxBounds: [
@@ -709,9 +713,6 @@ let selectedStatusFilter = "ALL";
 var currentPositionUser = null; 
 let internalRoutingControl = null;
 
-// ==========================================================================
-// DEFINISI LAYER MAPS (GOOGLE SERVER)
-// ==========================================================================
 var googleDefault = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
 attribution: '© Google Maps Streets'
 }).addTo(map); 
@@ -732,9 +733,6 @@ const baseLayers = {
 
 var markerGroup = L.layerGroup().addTo(map);
 
-// ==========================================================================
-// PANE KUSTOM KHUSUS DI ATAS GOOGLE MAPS
-// ==========================================================================
 map.createPane('userGpsPane');
 map.getPane('userGpsPane').style.zIndex = 650; 
 map.getPane('userGpsPane').style.pointerEvents = 'none';
@@ -945,7 +943,7 @@ const waktuBersih = formatWaktuIndo(attr.created_at);
 if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><span style='color:green; font-weight:bold;'>Berhasil Plotting ke Peta</span>`;
 if (lat !== null && lng !== null) {
 markerGroup.clearLayers();
-let warnaMarker = "#008000"; // Hijau asli hex
+let warnaMarker = "#008000"; 
 if (statusAlatOffline) {
 warnaMarker = "#808080";
 } else {
@@ -953,7 +951,6 @@ if (statusStr.includes("WASPADA")) warnaMarker = "#ffcc00";
 if (statusStr.includes("BAHAYA")) warnaMarker = "#ff0000";
 }
 
-// UPDATE: MARKER KUSTOM DENGAN ANIMASI DENYUT RADAR PROPOSIONAL
 var radarIcon = L.divIcon({
     className: 'radar-marker-wrapper',
     html: `<div class="radar-marker-element" style="background-color: ${warnaMarker}; border-color: #ffffff;"></div>`,
@@ -1031,7 +1028,7 @@ router: L.Routing.osrmv1({
 serviceUrl: 'https://router.project-osrm.org/route/v1' 
 }),
 lineOptions: {
-styles: [{ color: '#007a87', opacity: 0.85, weight: 6 }] // Warna rute diselaraskan ke teal tua Google style
+styles: [{ color: '#007a87', opacity: 0.85, weight: 6 }] 
 },
 createMarker: function() { return null; } 
 }).addTo(map);
@@ -1048,7 +1045,6 @@ var sisaMenit = waktuMenit % 60;
 teksWaktu = jam + " jam " + sisaMenit + " menit";
 }
 
-// UPDATE: MENGHAPUS ALERT() DAN MENGISI DATA KE WADAH PANEL BAWAH
 document.getElementById('route-distance-val').innerText = jarakKm + " Km";
 document.getElementById('route-time-val').innerText = teksWaktu;
 document.getElementById('live-route-info').style.display = "block";
@@ -1087,9 +1083,6 @@ document.getElementById('bottom-attribute-panel').classList.remove('active');
 bersihkanRuteInternal();
 }
 
-// ==========================================================================
-// FUNGSIONALITAS PELACAKAN LOKASI GPS PENGGUNA
-// ==========================================================================
 map.locate({
 setView: false, 
 watch: true, 
