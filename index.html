@@ -21,8 +21,6 @@ padding: 0;
 font-family: Arial, sans-serif;
 background-color: #000; 
 overflow: hidden;
-/* PERBAIKAN: Memblokir efek membal/bouncing halaman pada browser seluler */
-overscroll-behavior: none; 
 }
 /* ==========================================================================
 DESAIN SPLASH SCREEN KUSTOM PREMIUM (MURNI TEKS & GRADASI MERAH)
@@ -224,33 +222,29 @@ min-width: 260px;
 padding-right: 5px;
 }
 /* ==========================================================================
-PERBAIKAN UTAMA: PANEL ATRIBUT FIXED MODE (ANTI-SERET & ANTI-GESER LAUT/MAPS)
+PERBAIKAN UTAMA: PANEL ATRIBUT BAWAH LAYAR YANG PADAT & MINIM SPACE KOSONG
 ========================================================================== */
 #bottom-attribute-panel {
-position: fixed; /* PERBAIKAN: Mengunci posisi mutlak terhadap layar agar tidak melayang mengikuti scroll */
+position: absolute;
 bottom: -400px;
 left: 50%;
 transform: translateX(-50%);
 width: 90%;
 max-width: 950px;
-height: auto; 
-max-height: 290px; 
+height: auto; /* Otomatis mengikuti tinggi konten di dalamnya, menghilangkan blank space */
+max-height: 290px; /* Batas aman tinggi agar tidak menutupi peta */
 background: rgba(255, 255, 255, 0.94);
 backdrop-filter: blur(12px);
 -webkit-backdrop-filter: blur(12px);
 z-index: 1000;
 border-radius: 12px 12px 0 0;
 box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
-padding: 10px 14px 10px 14px; 
+padding: 10px 14px 10px 14px; /* Padding bawah dioptimalkan */
 box-sizing: border-box;
 transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 display: flex;
 flex-direction: column;
 gap: 6px; 
-
-/* PERBAIKAN STABILITAS: Mengizinkan manipulasi sentuh normal secara spesifik dan memotong perambatan event */
-touch-action: auto;
-overscroll-behavior: contain;
 }
 #bottom-attribute-panel.active {
 bottom: 0;
@@ -276,15 +270,10 @@ line-height: 1;
 overflow-x: auto;
 overflow-y: auto;
 width: 100%;
-max-height: 130px; 
+max-height: 130px; /* Mengunci max-height tabel agar sisa ruang bawah tidak menganga */
 background: #fff;
 border: 1px solid #ddd;
 border-radius: 4px;
-
-/* PERBAIKAN: Memisahkan secara tegas arah scroll dan mengisolasi penuh agar tidak bocor ke container maps */
-touch-action: pan-x pan-y;
-overscroll-behavior: contain;
--webkit-overflow-scrolling: touch;
 }
 .grid-table {
 width: 100%;
@@ -712,14 +701,14 @@ const SPREADSHEET_ID = "12YVGi7-rCuTd1n2G8ZRA5GYo79RuznWvq1m2iyPb4OQ";
 const SHEET_GID = "1499191826";
 
 var map = L.map('map', {
-minZoom: 3,          
-worldCopyJump: true, 
+minZoom: 3,          // Pembatasan zoom out agar tidak menyisakan ruang kosong (Full Screen Mode)
+worldCopyJump: true, // Marker diduplikasi otomatis secara horizontal saat peta digeser tiada batas
 maxBounds: [
 [-90, -180], 
 [90, 180] 
 ],
 maxBoundsViscosity: 1.0 
-}).setView([0, 0], 3); 
+}).setView([0, 0], 3); // View awal dinaikkan ke level 3 agar proporsional memenuhi layar penuh
 
 let isFirstLoad = true; 
 let currentCloudData = null; 
@@ -1022,10 +1011,7 @@ isFirstLoad = false;
 }
 } else {
 markerGroup.clearLayers();
-/* PERBAIKAN: Hanya paksa tutup panel jika panel tidak dalam posisi aktif dibuka oleh user */
-if (!document.getElementById('bottom-attribute-panel').classList.contains('active')) {
 tutupPanelAtribut();
-}
 if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><span style='color:orange; font-weight:bold;'>Data Disembunyikan Filter</span><br><small style='color:#666;'>Filter Aktif: ${selectedStatusFilter}</small>`;
 }
 }
