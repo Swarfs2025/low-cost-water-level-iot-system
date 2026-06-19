@@ -712,14 +712,14 @@ const SPREADSHEET_ID = "12YVGi7-rCuTd1n2G8ZRA5GYo79RuznWvq1m2iyPb4OQ";
 const SHEET_GID = "1499191826";
 
 var map = L.map('map', {
-minZoom: 3,          // Pembatasan zoom out agar tidak menyisakan ruang kosong (Full Screen Mode)
-worldCopyJump: true, // Marker diduplikasi otomatis secara horizontal saat peta digeser tiada batas
+minZoom: 3,          
+worldCopyJump: true, 
 maxBounds: [
 [-90, -180], 
 [90, 180] 
 ],
 maxBoundsViscosity: 1.0 
-}).setView([0, 0], 3); // View awal dinaikkan ke level 3 agar proporsional memenuhi layar penuh
+}).setView([0, 0], 3); 
 
 let isFirstLoad = true; 
 let currentCloudData = null; 
@@ -1022,7 +1022,10 @@ isFirstLoad = false;
 }
 } else {
 markerGroup.clearLayers();
+/* PERBAIKAN: Hanya paksa tutup panel jika panel tidak dalam posisi aktif dibuka oleh user */
+if (!document.getElementById('bottom-attribute-panel').classList.contains('active')) {
 tutupPanelAtribut();
+}
 if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><span style='color:orange; font-weight:bold;'>Data Disembunyikan Filter</span><br><small style='color:#666;'>Filter Aktif: ${selectedStatusFilter}</small>`;
 }
 }
