@@ -1033,6 +1033,7 @@ L.latLng(destLat, destLng)
 router: L.Routing.osrmv1({
 serviceUrl: 'https://router.project-osrm.org/route/v1' 
 }),
+fitSelectedRoutes: false, // MENYEMBUNYIKAN AUTO-ZOOM PLUGIN AGAR TIDAK MENIMPA SKRIP KUSTOM KITA
 lineOptions: {
 styles: [{ color: '#007a87', opacity: 0.85, weight: 6 }] 
 },
@@ -1055,7 +1056,7 @@ document.getElementById('route-distance-val').innerText = jarakKm + " Km";
 document.getElementById('route-time-val').innerText = teksWaktu;
 document.getElementById('live-route-info').style.display = "block";
 
-// OTOMATIS ZOOM PETA AGAR TITIK GPS USER DAN STASIUN TUJUAN TERLIHAT DENGAN JELAS
+// OTOMATIS ZOOM PETA AGAR TITIK GPS USER DAN STASIUN TUJUAN TERLIHAT DENGAN JELAS SECARA MUTLAK
 var bounds = L.latLngBounds([
 [currentPositionUser.lat, currentPositionUser.lng],
 [destLat, destLng]
