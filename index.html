@@ -266,6 +266,8 @@ color: #ff0000;
 cursor: pointer;
 line-height: 1;
 }
+
+/* MODIFIKASI DISINI: MENJAMIN SCROLL KANAN-KIRI BERJALAN SEMPURNA */
 .table-responsive-container {
 overflow-x: auto;
 overflow-y: auto;
@@ -274,9 +276,13 @@ max-height: 130px; /* Mengunci max-height tabel agar sisa ruang bawah tidak meng
 background: #fff;
 border: 1px solid #ddd;
 border-radius: 4px;
+display: block;
+-webkit-overflow-scrolling: touch; /* Membuat scroll terasa smooth/fluid di iOS & Android */
 }
+
 .grid-table {
 width: 100%;
+min-width: 1200px; /* MEMAKSA TABEL MEMILIKI LEBAR MINIMUM AGAR 16 KOLOM BISA DI-SCROLL TANPA MENYUSUT */
 border-collapse: collapse;
 font-size: 11px;
 white-space: nowrap;
