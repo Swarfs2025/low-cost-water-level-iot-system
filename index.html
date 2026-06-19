@@ -1122,14 +1122,46 @@ statusDebug.innerHTML = `<span style='color:orange; font-weight:bold;'>GPS Devic
 console.log("Akses Geolocation bermasalah: " + e.message);
 });
 
-// Kunci Event Perambatan/Touch agar map latar belakang tidak bergerak saat panel bawah digulir/diseret
+// ==========================================================================
+// INTERSEPSI INPUT SENTUH NATIVE: KUNCI TOTAL GERAKAN PETA LATAR BELAKANG
+// ==========================================================================
 const panelAtributElemen = document.getElementById('bottom-attribute-panel');
 if (panelAtributElemen) {
-L.DomEvent.disableScrollPropagation(panelAtributElemen);
-L.DomEvent.disableClickPropagation(panelAtributElemen);
-L.DomEvent.on(panelAtributElemen, 'touchstart touchmove pointerdown pointermove', function(e) {
-L.DomEvent.stopPropagation(e);
-});
+    // Matikan propagasi standar bawaan Leaflet
+    L.DomEvent.disableScrollPropagation(panelAtributElemen);
+    L.DomEvent.disableClickPropagation(panelAtributElemen);
+    
+    // Matikan fitur dragging peta saat area panel bawah mulai disentuh jari
+    panelAtributElemen.addEventListener('touchstart', function(e) {
+        const isInsideTable = e.target.closest('.table-responsive-container');
+        if (!isInsideTable) {
+            map.dragging.disable();
+        }
+    }, { passive: false });
+
+    // Blokir pergerakan liar touchmove agar efek elastis WebView Android tidak menarik peta
+    panelAtributElemen.addEventListener('touchmove', function(e) {
+        const container = document.querySelector('.table-responsive-container');
+        const isInsideTable = e.target.closest('.table-responsive-container');
+
+        if (isInsideTable) {
+            // Jika jari bergerak di dalam tabel, izinkan scroll jika konten meluap (overflow)
+            const isScrollable = container.scrollHeight > container.clientHeight;
+            if (isScrollable) {
+                e.stopPropagation();
+                return; 
+            }
+        }
+        
+        // Cegah APK melakukan pull-to-refresh bawaan sistem Android WebView
+        e.preventDefault();
+        e.stopPropagation();
+    }, { passive: false });
+
+    // Aktifkan kembali drag peta saat jari diangkat dari panel bawah
+    panelAtributElemen.addEventListener('touchend', function() {
+        map.dragging.enable();
+    });
 }
 
 fetchOnlineData();
