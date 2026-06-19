@@ -222,29 +222,29 @@ min-width: 260px;
 padding-right: 5px;
 }
 /* ==========================================================================
-STRUKTUR BARU: DESAIN PANEL ATRIBUT HORIZONTAL BAWAH LAYAR (OPTIMAL SPACE)
+PERBAIKAN UTAMA: PANEL ATRIBUT BAWAH LAYAR YANG PADAT & MINIM SPACE KOSONG
 ========================================================================== */
 #bottom-attribute-panel {
 position: absolute;
-bottom: -350px;
+bottom: -400px;
 left: 50%;
 transform: translateX(-50%);
 width: 90%;
-max-width: 900px;
-height: auto; /* Mengikuti tinggi konten agar tidak menyisakan ruang kosong */
-max-height: 280px; /* Batas tinggi maksimal agar tidak menutupi layar */
-background: rgba(255, 255, 255, 0.92);
-backdrop-filter: blur(10px);
--webkit-backdrop-filter: blur(10px);
+max-width: 950px;
+height: auto; /* Otomatis mengikuti tinggi konten di dalamnya, menghilangkan blank space */
+max-height: 290px; /* Batas aman tinggi agar tidak menutupi peta */
+background: rgba(255, 255, 255, 0.94);
+backdrop-filter: blur(12px);
+-webkit-backdrop-filter: blur(12px);
 z-index: 1000;
 border-radius: 12px 12px 0 0;
 box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
-padding: 10px 12px 6px 12px; /* Padding bawah diperkecil */
+padding: 10px 14px 10px 14px; /* Padding bawah dioptimalkan */
 box-sizing: border-box;
 transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 display: flex;
 flex-direction: column;
-gap: 4px; /* Jarak antar elemen dibuat proporsional dan padat */
+gap: 6px; 
 }
 #bottom-attribute-panel.active {
 bottom: 0;
@@ -260,7 +260,7 @@ padding-bottom: 2px;
 .close-panel-btn {
 background: none;
 border: none;
-font-size: 18px;
+font-size: 20px;
 font-weight: bold;
 color: #ff0000;
 cursor: pointer;
@@ -269,9 +269,11 @@ line-height: 1;
 .table-responsive-container {
 overflow-x: auto;
 overflow-y: auto;
-flex: 1;
 width: 100%;
-max-height: 120px; /* Membatasi tinggi tabel agar layout tetap ringkas */
+max-height: 130px; /* Mengunci max-height tabel agar sisa ruang bawah tidak menganga */
+background: #fff;
+border: 1px solid #ddd;
+border-radius: 4px;
 }
 .grid-table {
 width: 100%;
@@ -282,18 +284,19 @@ white-space: nowrap;
 .grid-table th {
 background: #0056b3;
 color: white;
-padding: 5px 8px;
+padding: 6px 10px;
 text-align: left;
 position: sticky;
 top: 0;
+z-index: 2;
 }
 .grid-table td {
-padding: 5px 8px;
+padding: 6px 10px;
 border-bottom: 1px solid #ddd;
 color: #222;
 }
 .grid-table tr:nth-child(even) {
-background: rgba(0,0,0,0.03);
+background: rgba(0,0,0,0.02);
 }
 /* ==========================================================================
 BARU: CSS EDITAN PIL-SHAPE PREMIUM (GOOGLE MAPS REAL PANEL STYLE)
@@ -302,9 +305,9 @@ BARU: CSS EDITAN PIL-SHAPE PREMIUM (GOOGLE MAPS REAL PANEL STYLE)
 display: flex;
 flex-direction: column; 
 gap: 4px;
-margin-top: 4px;
+margin-top: 2px;
 border-top: 1px solid rgba(0,0,0,0.06);
-padding-top: 4px;
+padding-top: 6px;
 }
 .buttons-wrapper {
 display: flex;
@@ -315,8 +318,8 @@ display: inline-flex;
 align-items: center;
 justify-content: center;
 gap: 6px;
-padding: 6px 16px; /* Padding tombol diperkecil agar tidak memakan ruang bawah */
-font-size: 12.5px;
+padding: 6px 16px; 
+font-size: 12px;
 font-weight: bold;
 border-radius: 50px; 
 border: none;
@@ -361,7 +364,7 @@ padding: 4px 10px;
 background-color: rgba(0, 122, 135, 0.08);
 border-left: 4px solid #007a87;
 border-radius: 4px;
-font-size: 11.5px;
+font-size: 11px;
 font-weight: bold;
 color: #004d61;
 margin-bottom: 2px;
