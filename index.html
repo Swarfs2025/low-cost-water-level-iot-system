@@ -222,24 +222,24 @@ min-width: 260px;
 padding-right: 5px;
 }
 /* ==========================================================================
-PERBAIKAN UTAMA: POSISI FIXED SUPAYA TETAP DI BAWAH & TIDAK BERGERAK SAAT SCROLL
+PERBAIKAN UTAMA: PANEL ATRIBUT BAWAH LAYAR YANG PADAT & MINIM SPACE KOSONG
 ========================================================================== */
 #bottom-attribute-panel {
-position: fixed; /* Mengunci posisi panel terhadap viewport layar */
+position: absolute;
 bottom: -400px;
 left: 50%;
 transform: translateX(-50%);
 width: 90%;
 max-width: 950px;
-height: auto; 
-max-height: 290px; 
+height: auto; /* Otomatis mengikuti tinggi konten di dalamnya, menghilangkan blank space */
+max-height: 290px; /* Batas aman tinggi agar tidak menutupi peta */
 background: rgba(255, 255, 255, 0.94);
 backdrop-filter: blur(12px);
 -webkit-backdrop-filter: blur(12px);
 z-index: 1000;
 border-radius: 12px 12px 0 0;
 box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
-padding: 10px 14px 10px 14px; 
+padding: 10px 14px 10px 14px; /* Padding bawah dioptimalkan */
 box-sizing: border-box;
 transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 display: flex;
@@ -270,11 +270,10 @@ line-height: 1;
 overflow-x: auto;
 overflow-y: auto;
 width: 100%;
-max-height: 130px; 
+max-height: 130px; /* Mengunci max-height tabel agar sisa ruang bawah tidak menganga */
 background: #fff;
 border: 1px solid #ddd;
 border-radius: 4px;
-overscroll-behavior: contain; /* Mencegah efek scroll bocor ke background peta */
 }
 .grid-table {
 width: 100%;
@@ -441,7 +440,7 @@ font-weight: bold;
 }
 /* ==========================================================================
 CSS LAYER TITIK SEBARAN KUSTOM PADA GAMBAR PETA DEFAULT
-========================================================================== */
+================================================================ layer */
 .map-bg-overlay {
 position: absolute;
 top: 0;
@@ -702,13 +701,14 @@ const SPREADSHEET_ID = "12YVGi7-rCuTd1n2G8ZRA5GYo79RuznWvq1m2iyPb4OQ";
 const SHEET_GID = "1499191826";
 
 var map = L.map('map', {
-    worldCopyJump: false,
-    maxBounds: [
-        [-90, -180], 
-        [90, 180]    
-    ],
-    maxBoundsViscosity: 1.0 
-}).setView([0, 0], 2); 
+minZoom: 3,          // Pembatasan zoom out agar tidak menyisakan ruang kosong (Full Screen Mode)
+worldCopyJump: true, // Marker diduplikasi otomatis secara horizontal saat peta digeser tiada batas
+maxBounds: [
+[-90, -180], 
+[90, 180] 
+],
+maxBoundsViscosity: 1.0 
+}).setView([0, 0], 3); // View awal dinaikkan ke level 3 agar proporsional memenuhi layar penuh
 
 let isFirstLoad = true; 
 let currentCloudData = null; 
@@ -956,10 +956,10 @@ if (statusStr.includes("BAHAYA")) warnaMarker = "#ff0000";
 }
 
 var radarIcon = L.divIcon({
-    className: 'radar-marker-wrapper',
-    html: `<div class="radar-marker-element" style="background-color: ${warnaMarker}; border-color: #ffffff;"></div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8]
+className: 'radar-marker-wrapper',
+html: `<div class="radar-marker-element" style="background-color: ${warnaMarker}; border-color: #ffffff;"></div>`,
+iconSize: [16, 16],
+iconAnchor: [8, 8]
 });
 
 var liveMarker = L.marker([lat, lng], { icon: radarIcon }).addTo(markerGroup);
