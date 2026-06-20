@@ -283,7 +283,7 @@ background: #f9f9f9;
 }
 /* ==========================================================================
 PERBAIKAN WARNA UTAMA: PIL-SHAPE ACTION BAR MENJADI BIRU GOOGLE MAPS
-========================================================================== */
+========================================================================= */
 .navigation-action-bar {
 display: flex;
 flex-direction: column; 
@@ -688,7 +688,7 @@ var googleDefault = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z=
 attribution: '© Google Maps Streets'
 }).addTo(map); 
 
-var googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+var googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
 attribution: '© Google Maps Hybrid'
 });
 
@@ -1010,7 +1010,7 @@ internalRoutingControl = null;
 document.getElementById('live-route-info').style.display = "none";
 }
 
-/* MODIFIKASI: Menggunakan Web Share API agar memicu Lembar Berbagi Sistem Android */
+/* PERBAIKAN: Menggunakan skema whatsapp:// agar langsung mampir ke aplikasi WA asli Android tanpa jeda halaman web browser */
 function jalankanFiturShare() {
 if (!currentCloudData) {
 alert("Data belum siap untuk dibagikan!");
@@ -1018,13 +1018,15 @@ return;
 }
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `http://googleusercontent.com/maps.google.com/?q=${lat},${lng}`;
+const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
 const textShare = `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
                   `📍 *Titik:* ${currentCloudData.nama_titik}\n` +
                   `📊 *Status:* ${currentCloudData.status}\n` +
                   `📏 *TMA:* ${currentCloudData.tinggi_muka_air} cm\n` +
                   `🗺️ *Lokasi:* ${currentCloudData.estate} - ${currentCloudData.blok}\n\n` +
                   `Buka rute langsung di Google Maps:\n${googleMapsLink}`;
+
+const textEncoded = encodeURIComponent(textShare);
 
 // Cek apakah browser / WebView mendukung Native Share API bawaan sistem HP
 if (navigator.share) {
@@ -1033,11 +1035,13 @@ title: `Monitoring ${currentCloudData.nama_titik}`,
 text: textShare
 })
 .then(() => console.log('Berhasil memicu lembar share bawaan sistem'))
-.catch((error) => console.log('Share dibatalkan atau error:', error));
+.catch((error) => {
+// Fallback jika dibatalkan atau Web Share API diblokir WebView: langsung tembak ke deep link WhatsApp
+window.location.href = `whatsapp://send?text=${textEncoded}`;
+});
 } else {
-// Fallback cadangan otomatis ke WhatsApp jika WebView memblokir fitur sistem share
-const textEncoded = encodeURIComponent(textShare);
-window.open(`https://api.whatsapp.com/send?text=${textEncoded}`, '_blank');
+// JIKA DI DALAM APK WEBVIEW: Langsung tembak ke Deep Link WhatsApp agar bypass halaman web intermediari
+window.location.href = `whatsapp://send?text=${textEncoded}`;
 }
 }
 
