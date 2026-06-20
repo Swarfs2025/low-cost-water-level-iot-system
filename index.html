@@ -1010,7 +1010,7 @@ internalRoutingControl = null;
 document.getElementById('live-route-info').style.display = "none";
 }
 
-/* MODIFIKASI TERKUNCI: Menggunakan Web Share API Native untuk melempar data langsung ke WhatsApp/Telegram */
+/* MODIFIKASI BYPASS WEBVIEW APK: Langsung menembak URL WhatsApp API secara universal tanpa popup */
 function jalankanFiturShare() {
 if (!currentCloudData) {
 alert("Data belum siap untuk dibagikan!");
@@ -1018,7 +1018,7 @@ return;
 }
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
 const textShare = `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
                   `📍 *Titik:* ${currentCloudData.nama_titik}\n` +
                   `📊 *Status:* ${currentCloudData.status}\n` +
@@ -1026,22 +1026,9 @@ const textShare = `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
                   `🗺️ *Lokasi:* ${currentCloudData.estate} - ${currentCloudData.blok}\n\n` +
                   `Buka rute langsung di Google Maps:\n${googleMapsLink}`;
 
-if (navigator.share) {
-navigator.share({
-title: `LCWL 2.0 - ${currentCloudData.nama_titik}`,
-text: textShare
-}).catch(err => console.log(err));
-} else {
 const textEncoded = encodeURIComponent(textShare);
-const opsiPilihan = confirm("Browser desktop dideteksi.\n\nKlik 'OK' untuk share ke WhatsApp Web, atau 'Cancel' untuk menyalin teks koordinat.");
-if (opsiPilihan) {
+// Bypass total Native Share API yang sering didepak/diblokir oleh WebView Android di 2APK Builder
 window.open(`https://api.whatsapp.com/send?text=${textEncoded}`, '_blank');
-} else {
-navigator.clipboard.writeText(textShare).then(() => {
-alert(`Teks laporan sukses disalin ke Clipboard!`);
-});
-}
-}
 }
 
 function tutupPanelAtribut() {
