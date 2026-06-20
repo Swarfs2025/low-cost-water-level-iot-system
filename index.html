@@ -1028,8 +1028,8 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 document.getElementById('btn-maps-start').onclick = function() {
-// MODIFIKASI: Langsung memicu Intent URL navigasi asli Google Maps ke koordinat alat
-const intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+// MODIFIKASI: Menggunakan Directions API dengan parameter dir_action=navigate untuk langsung eksekusi mode navigasi aktif
+const intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&dir_action=navigate`;
 window.open(intentGoogleMaps, '_blank');
 };
 document.getElementById('bottom-attribute-panel').classList.add('active');
@@ -1153,7 +1153,7 @@ bukaModalKustom(teksDisiapkanUntukShare);
 }
 });
 } else {
-bukaModalKustom(teksDisiapkanUntukShare);
+bukaModalKustom(teksDisiapkanUntilShare);
 }
 }
 function bukaModalKustom(teksLengkap) {
