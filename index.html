@@ -1112,7 +1112,7 @@ document.getElementById('live-route-info').style.display = "none";
 }
 
 /* ==========================================================================
-SISTEM MULTI-SHARE UNTUK WEB & APK WEBVIEW (UNIVERSAL)
+SISTEM MULTI-SHARE UNTUK WEB & APK WEBVIEW (UNIVERSAL - NATIVE PRIORITY FIXED)
 ========================================================================== */
 let teksDisiapkanUntukShare = "";
 
@@ -1140,34 +1140,24 @@ return;
 const shareData = rakitTeksShare();
 teksDisiapkanUntukShare = shareData.text;
 
-// Langkah 1: Gunakan Native Web Share API bawaan Android / Browser Mobile
+// Langkah 1: Selalu utamakan memicu Native Share Sheet bawaan OS/Browser HP
 if (navigator.share) {
 navigator.share({
 title: shareData.title,
 text: teksDisiapkanUntukShare
 })
-.then(() => console.log('Berhasil membuka native share.'))
+.then(() => console.log('Berhasil memicu Native Share Sheet.'))
 .catch((err) => {
+// Jika user sengaja membatalkan/menutup Native Share (AbortError), diamkan saja.
+// Tapi jika error karena sistem webview memblokir Share API, tampilkan modal kustom sebagai gantinya.
 if (err.name !== 'AbortError') {
-// Jika native share diblokir / crash di dalam WebView, arahkan paksa via WhatsApp intents
-bukaAplikasiIntentsLangsung(teksDisiapkanUntukShare);
+bukaModalKustom(teksDisiapkanUntukShare);
 }
 });
 } else {
-// Langkah 2: Browser/WebView jadul, langsung eksekusi deep link intents
-bukaAplikasiIntentsLangsung(teksDisiapkanUntukShare);
+// Langkah 2: Jika browser/WebView tidak mendukung navigator.share, tampilkan modal pilihan kustom
+bukaModalKustom(teksDisiapkanUntukShare);
 }
-}
-
-function bukaAplikasiIntentsLangsung(teksLengkap) {
-const textEncoded = encodeURIComponent(teksLengkap);
-// Memicu Deep Link WhatsApp (Membuka aplikasi WA langsung secara otomatis di HP)
-window.location.href = `whatsapp://send?text=${textEncoded}`;
-
-// Fallback: Jika dalam 1.2 detik halaman tidak berpindah (Berarti WA tidak terinstall), tampilkan modal kustom
-setTimeout(() => {
-document.getElementById('shareModal').style.display = "flex";
-}, 1200);
 }
 
 function bukaModalKustom(teksLengkap) {
