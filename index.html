@@ -1028,9 +1028,17 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 document.getElementById('btn-maps-start').onclick = function() {
-// MODIFIKASI: Langsung memicu Intent URL navigasi asli Google Maps ke koordinat alat
-const intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
-window.open(intentGoogleMaps, '_blank');
+// MODIFIKASI TERBARU: Deteksi jika dibuka di dalam WebView Android / APK
+const isWebView = /wv|Android.*Version\/[\d.]+/.test(navigator.userAgent);
+
+if (isWebView) {
+    // Memaksa sistem Android untuk membuka aplikasi Google Maps bawaan langsung via Android Intent Protocol (Bypass WebView)
+    window.location.href = `intent://maps.google.com/maps?daddr=$${lat},${lng}&mode=d#Intent;scheme=http;package=com.google.android.apps.maps;end`;
+} else {
+    // Jalur normal jika dibuka melalui browser biasa Google Chrome / Safari HP
+    const intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=$${lat},${lng}&travelmode=driving&dir_action=navigate`;
+    window.open(intentGoogleMaps, '_blank');
+}
 };
 document.getElementById('bottom-attribute-panel').classList.add('active');
 });
