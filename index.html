@@ -8,18 +8,18 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-#map { 
-height: 100vh; 
-width: 100%; 
+#map {
+height: 100vh;
+width: 100%;
 position: relative;
-z-index: 1; 
+z-index: 1;
 background-color: #aad3df;
 }
-body { 
-margin: 0; 
-padding: 0; 
+body {
+margin: 0;
+padding: 0;
 font-family: Arial, sans-serif;
-background-color: #000; 
+background-color: #000;
 overflow: hidden;
 }
 /* ==========================================================================
@@ -31,7 +31,7 @@ top: 0;
 left: 0;
 width: 100vw;
 height: 100vh;
-background: linear-gradient(180deg, #e31e24 0%, #b81418 100%); 
+background: linear-gradient(180deg, #e31e24 0%, #b81418 100%);
 z-index: 9999;
 display: flex;
 justify-content: center;
@@ -43,18 +43,18 @@ transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 animation: fadeInContent 0.8s ease-out;
 }
 .splash-title {
-color: #ffffff; 
-margin: 0; 
-font-size: 48px; 
-font-weight: 900; 
+color: #ffffff;
+margin: 0;
+font-size: 48px;
+font-weight: 900;
 letter-spacing: 3px;
 text-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 .splash-subtitle {
-color: rgba(255, 255, 255, 0.9); 
-margin: 8px 0 30px 0; 
-font-size: 13px; 
-font-weight: bold; 
+color: rgba(255, 255, 255, 0.9);
+margin: 8px 0 30px 0;
+font-size: 13px;
+font-weight: bold;
 letter-spacing: 3px;
 text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
@@ -63,17 +63,17 @@ margin: 0 auto;
 width: 32px;
 height: 32px;
 border: 3px solid rgba(255, 255, 255, 0.2);
-border-top: 3px solid #ffffff; 
+border-top: 3px solid #ffffff;
 border-radius: 50%;
 animation: spin 0.8s linear infinite;
 }
 #splash-status {
-color: rgba(255, 255, 255, 0.6); 
-position: absolute; 
-bottom: 40px; 
-left: 0; 
-width: 100%; 
-font-size: 11px; 
+color: rgba(255, 255, 255, 0.6);
+position: absolute;
+bottom: 40px;
+left: 0;
+width: 100%;
+font-size: 11px;
 letter-spacing: 1px;
 }
 @keyframes spin {
@@ -84,7 +84,6 @@ letter-spacing: 1px;
 from { opacity: 0; transform: translateY(10px); }
 to { opacity: 1; transform: translateY(0); }
 }
-
 /* ==========================================================================
 STRUKTUR PURE CSS HAMBURGER & CONTAINER MENU BERLAPIS
 ========================================================================== */
@@ -123,7 +122,7 @@ transition: transform 0.3s ease, opacity 0.3s ease;
 .menu-drawer-container {
 position: absolute;
 top: 0;
-right: -320px; 
+right: -320px;
 width: 280px;
 height: 100vh;
 height: 100dvh;
@@ -143,7 +142,7 @@ border-left: 1px solid rgba(255, 255, 255, 0.3);
 overflow: hidden;
 }
 #menu-toggle:checked ~ .menu-drawer-container {
-right: 0; 
+right: 0;
 }
 #menu-toggle:checked ~ .hamburger-label span:nth-child(1) {
 transform: translateY(7px) rotate(45deg);
@@ -154,12 +153,11 @@ opacity: 0;
 #menu-toggle:checked ~ .hamburger-label span:nth-child(3) {
 transform: translateY(-7px) rotate(-45deg);
 }
-
 /* ==========================================================================
 UI: GLASSMORPHISM PANEL
 ========================================================================== */
 #upload-panel {
-position: static; 
+position: static;
 background: none;
 backdrop-filter: none;
 -webkit-backdrop-filter: none;
@@ -175,7 +173,7 @@ flex: 1;
 min-height: 0;
 }
 #debug-panel {
-position: static; 
+position: static;
 background: rgba(255, 255, 255, 0.45);
 backdrop-filter: blur(5px);
 -webkit-backdrop-filter: blur(5px);
@@ -186,7 +184,7 @@ font-size: 10.5px;
 max-width: 100%;
 line-height: 1.2;
 border: 1px solid rgba(255, 255, 255, 0.4);
-margin-top: 5px; 
+margin-top: 5px;
 flex-shrink: 0;
 }
 @media screen and (max-width: 600px) {
@@ -200,7 +198,6 @@ flex-shrink: 0;
 .google-thumbnail { aspect-ratio: 1.4 / 1 !important; border-radius: 6px !important; }
 #bottom-attribute-panel { width: 100% !important; height: auto !important; max-height: 340px !important; border-radius: 0 !important; }
 }
-
 /* ==========================================================================
 PANEL ATRIBUT BAWAH LAYAR WAJIB NATIVE SCROLL
 ========================================================================== */
@@ -211,20 +208,20 @@ left: 50%;
 transform: translateX(-50%);
 width: 100%;
 max-width: 950px;
-height: auto; 
-max-height: 330px; 
-background: rgba(255, 255, 255, 0.98); 
+height: auto;
+max-height: 330px;
+background: rgba(255, 255, 255, 0.98);
 backdrop-filter: blur(15px);
 -webkit-backdrop-filter: blur(15px);
-z-index: 5000; 
+z-index: 5000;
 border-radius: 14px 14px 0 0;
 box-shadow: 0 -8px 30px rgba(0,0,0,0.35);
-padding: 12px 14px; 
+padding: 12px 14px;
 box-sizing: border-box;
 transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 display: flex;
 flex-direction: column;
-gap: 8px; 
+gap: 8px;
 }
 #bottom-attribute-panel.active {
 bottom: 0;
@@ -249,7 +246,7 @@ padding: 0 5px;
 }
 .table-responsive-container {
 width: 100%;
-max-height: 140px; 
+max-height: 140px;
 overflow-x: auto !important;
 overflow-y: hidden !important;
 background: #ffffff;
@@ -257,15 +254,15 @@ border: 1px solid #ccc;
 border-radius: 6px;
 display: block;
 position: relative;
--webkit-overflow-scrolling: touch !important; 
-touch-action: pan-x !important; 
+-webkit-overflow-scrolling: touch !important;
+touch-action: pan-x !important;
 }
 .grid-table {
 width: auto;
-min-width: 1600px; 
+min-width: 1600px;
 border-collapse: collapse;
 font-size: 11.5px;
-white-space: nowrap !important; 
+white-space: nowrap !important;
 table-layout: auto;
 }
 .grid-table th {
@@ -284,13 +281,12 @@ background: #fff;
 .grid-table tr:nth-child(even) td {
 background: #f9f9f9;
 }
-
 /* ==========================================================================
 PERBAIKAN WARNA UTAMA: PIL-SHAPE ACTION BAR MENJADI BIRU GOOGLE MAPS
 ========================================================================== */
 .navigation-action-bar {
 display: flex;
-flex-direction: column; 
+flex-direction: column;
 gap: 4px;
 margin-top: 2px;
 border-top: 1px solid rgba(0,0,0,0.06);
@@ -305,10 +301,10 @@ display: inline-flex;
 align-items: center;
 justify-content: center;
 gap: 6px;
-padding: 6px 16px; 
+padding: 6px 16px;
 font-size: 12px;
 font-weight: bold;
-border-radius: 50px; 
+border-radius: 50px;
 border: none;
 cursor: pointer;
 transition: all 0.2s ease;
@@ -334,7 +330,7 @@ background-color: #e8f0fe;
 color: #1a73e8;
 }
 .icon-container-mulai {
-transform: rotate(45deg); 
+transform: rotate(45deg);
 font-size: 12px;
 }
 .nav-btn:hover {
@@ -345,7 +341,7 @@ transform: translateY(-1px);
 transform: translateY(0);
 }
 .live-route-info-box {
-display: none; 
+display: none;
 padding: 4px 10px;
 background-color: rgba(26, 115, 232, 0.08);
 border-left: 4px solid #1a73e8;
@@ -355,7 +351,6 @@ font-weight: bold;
 color: #1a73e8;
 margin-bottom: 2px;
 }
-
 /* ==========================================================================
 LAYOUT GRID JENIS PETA & DETAIL PETA
 ========================================================================== */
@@ -404,7 +399,7 @@ transition: color 0.2s ease;
 line-height: 1.1;
 }
 .google-card-input:checked + .google-maps-card .google-thumbnail {
-border: 2px solid #1a73e8; 
+border: 2px solid #1a73e8;
 transform: scale(0.96);
 box-shadow: 0 0 0 1px #ffffff, 0 2px 4px rgba(26,115,232,0.25);
 }
@@ -480,7 +475,6 @@ display: none !important;
 stroke: #1a73e8 !important;
 stroke-opacity: 0.90 !important;
 }
-
 /* ==========================================================================
 KUSTOM DIALOG MODAL SHARE BARU (UNTUK FALLBACK JIKA WEB SHARE DI-BLOKIR WEBVIEW)
 ========================================================================== */
@@ -559,7 +553,6 @@ to { transform: translateY(0); }
 </style>
 </head>
 <body>
-
 <div id="splash-screen">
 <div class="splash-content">
 <h1 class="splash-title">LCWL 2.0</h1>
@@ -568,14 +561,12 @@ to { transform: translateY(0); }
 <small id="splash-status">MENGHUBUNGKAN KE SERVER CLOUD...</small>
 </div>
 </div>
-
 <input type="checkbox" id="menu-toggle">
 <label for="menu-toggle" class="hamburger-label">
 <span></span>
 <span></span>
 <span></span>
 </label>
-
 <div class="menu-drawer-container">
 <div id="upload-panel">
 <b style="color: #1a73e8;">Koneksi Cloud Google:</b>
@@ -688,7 +679,6 @@ to { transform: translateY(0); }
 <div id="debug-text" style="font-size: 10.5px;">Menghubungkan ke cloud server Google Sheet...</div>
 </div>
 </div>
-
 <div id="bottom-attribute-panel">
 <div class="panel-header">
 <strong id="panel-device-title" style="color: #1a73e8; font-size: 13px;">Detail Informasi Alat</strong>
@@ -720,10 +710,9 @@ to { transform: translateY(0); }
 </tbody>
 </table>
 </div>
-
 <div class="navigation-action-bar">
 <div id="live-route-info" class="live-route-info-box">
-<i class="fa-solid fa-car-side" style="margin-right: 4px;"></i> Jarak Tempuh: <span id="route-distance-val" style="color:#1a73e8;">-</span> 
+<i class="fa-solid fa-car-side" style="margin-right: 4px;"></i> Jarak Tempuh: <span id="route-distance-val" style="color:#1a73e8;">-</span>
 <span style="margin: 0 10px; color:#ccc;">|</span>
 <i class="fa-solid fa-stopwatch" style="margin-right: 4px;"></i> Waktu: <span id="route-time-val" style="color:#1a73e8;">-</span>
 </div>
@@ -740,7 +729,6 @@ to { transform: translateY(0); }
 </div>
 </div>
 </div>
-
 <div id="shareModal" class="custom-share-modal" onclick="tutupShareModal(event)">
 <div class="share-modal-content" onclick="event.stopPropagation()">
 <div class="share-modal-header">
@@ -763,55 +751,45 @@ to { transform: translateY(0); }
 </div>
 </div>
 </div>
-
 <div id="map"></div>
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 <script>
 const SPREADSHEET_ID = "12YVGi7-rCuTd1n2G8ZRA5GYo79RuznWvq1m2iyPb4OQ";
 const SHEET_GID = "1499191826";
-
 var map = L.map('map', {
-minZoom: 3, 
-worldCopyJump: true, 
+minZoom: 3,
+worldCopyJump: true,
 maxBounds: [[-90, -180], [90, 180]],
-maxBoundsViscosity: 1.0 
-}).setView([0, 0], 3); 
-
-let isFirstLoad = true; 
-let currentCloudData = null; 
-let selectedStatusFilter = "ALL"; 
-
-var currentPositionUser = null; 
+maxBoundsViscosity: 1.0
+}).setView([0, 0], 3);
+let isFirstLoad = true;
+let currentCloudData = null;
+let selectedStatusFilter = "ALL";
+var currentPositionUser = null;
 let internalRoutingControl = null;
-
+let currentDestinationLat = null;
+let currentDestinationLng = null;
+let isNavigatingActive = false;
 var googleDefault = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
 attribution: '© Google Maps Streets'
-}).addTo(map); 
-
+}).addTo(map);
 var googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
 attribution: '© Google Maps Hybrid'
 });
-
 var googleMedan = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
 attribution: '© Google Maps Terrain'
 });
-
 const baseLayers = {
 'default': googleDefault,
 'satelit': googleSatellite,
 'medan': googleMedan
 };
-
 var markerGroup = L.layerGroup().addTo(map);
-
 map.createPane('userGpsPane');
-map.getPane('userGpsPane').style.zIndex = 650; 
+map.getPane('userGpsPane').style.zIndex = 650;
 map.getPane('userGpsPane').style.pointerEvents = 'none';
-
 var userLocationLayer = L.layerGroup([], { pane: 'userGpsPane' }).addTo(map);
-
 function changeBaseMap(layerKey) {
 for (let key in baseLayers) {
 if (map.hasLayer(baseLayers[key])) {
@@ -822,12 +800,10 @@ if (baseLayers[layerKey]) {
 baseLayers[layerKey].addTo(map);
 }
 }
-
 function setQuickStatusFilter(statusValue) {
 selectedStatusFilter = statusValue;
-applySmartFilter(); 
+applySmartFilter();
 }
-
 function parseToValidCoord(valRaw, isLongitude) {
 if (!valRaw) return null;
 let cleanStr = valRaw.toString().replace(/\s/g, '');
@@ -845,7 +821,6 @@ if (num < -90) { while (num < -90) num = num / 10; }
 }
 return num;
 }
-
 function dapatkanObjekWaktu(rawDateStr) {
 if (!rawDateStr) return null;
 if (rawDateStr.toString().includes("Date(")) {
@@ -853,7 +828,7 @@ try {
 let matches = rawDateStr.toString().match(/\d+/g);
 if (matches && matches.length >= 3) {
 let y = parseInt(matches[0]);
-let m = parseInt(matches[1]); 
+let m = parseInt(matches[1]);
 let d = parseInt(matches[2]);
 let j = parseInt(matches[3] || "0");
 let mn = parseInt(matches[4] || "0");
@@ -865,7 +840,6 @@ return new Date(y, m, d, j, mn, det);
 let dObj = new Date(rawDateStr);
 return isNaN(dObj.getTime()) ? null : dObj;
 }
-
 function getValByKey(dataObj, keyName) {
 const target = keyName.toLowerCase().trim();
 for (let key in dataObj) {
@@ -875,7 +849,6 @@ return dataObj[key] !== null && dataObj[key] !== undefined ? dataObj[key] : "";
 }
 return "";
 }
-
 function formatWaktuIndo(rawDateStr) {
 let dateObj = dapatkanObjekWaktu(rawDateStr);
 if (!dateObj) return rawDateStr || "Baru Saja";
@@ -887,7 +860,6 @@ let mn = dateObj.getMinutes().toString().padStart(2, '0');
 let det = dateObj.getSeconds().toString().padStart(2, '0');
 return `${d}-${m}-${y} ${j}:${mn}:${det}`;
 }
-
 function fetchOnlineData() {
 const oldScript = document.getElementById('google-sheet-trigger');
 if (oldScript) oldScript.remove();
@@ -904,7 +876,6 @@ debugDiv.innerHTML = "<span style='color:red;'>Gagal memuat data online! Periksa
 };
 document.body.appendChild(script);
 }
-
 function processCloudData(response) {
 const debugDiv = document.getElementById('debug-text');
 if (!response || !response.table || !response.table.rows || response.table.rows.length === 0) {
@@ -942,14 +913,12 @@ created_at: getValByKey(dataAlat, "created_at")
 const splashStatus = document.getElementById('splash-status');
 if (splashStatus) splashStatus.innerHTML = "DATA ONLINE BERHASIL SINKRON!";
 applySmartFilter();
-
 const splash = document.getElementById('splash-screen');
 if (splash) {
 splash.style.opacity = '0';
 setTimeout(function() { splash.remove(); }, 600);
 }
 }
-
 function applySmartFilter() {
 if (!currentCloudData) return;
 const debugDiv = document.getElementById('debug-text');
@@ -958,7 +927,6 @@ const attr = currentCloudData;
 const targetRegistered = document.getElementById('total-registered');
 const targetOnline = document.getElementById('total-online');
 const targetOffline = document.getElementById('total-offline');
-
 let statusAlatOffline = false;
 let waktuSistemSekarang = new Date();
 let waktuDataTerakhir = dapatkanObjekWaktu(attr.created_at);
@@ -968,7 +936,6 @@ if (selisihWaktuJam > 1.0) { statusAlatOffline = true; }
 }
 const statusStr = (attr.status || "").toString().toUpperCase();
 if (statusStr.includes("OFFLINE")) { statusAlatOffline = true; }
-
 if (attr.latitude && attr.longitude) {
 if (targetRegistered) targetRegistered.innerHTML = `Perangkat Terdaftar: <span style="font-weight: bold; color: #000000;">1</span>`;
 if (statusAlatOffline) {
@@ -979,14 +946,12 @@ if (targetOnline) targetOnline.innerHTML = `Perangkat Online: <span style="font-
 if (targetOffline) targetOffline.innerHTML = `Perangkat Offline: <span style="font-weight: bold; color: #ff0000;">0</span>`;
 }
 }
-
 let lolosFilterKombinasi = true;
 const psmStr = (attr.psm || "").toString().toUpperCase();
 const estateStr = (attr.estate || "").toString().toUpperCase();
 if (keyword !== "" && !psmStr.includes(keyword) && !estateStr.includes(keyword)) {
 lolosFilterKombinasi = false;
 }
-
 if (selectedStatusFilter !== "ALL") {
 if (selectedStatusFilter === "ONLINE" && statusAlatOffline) lolosFilterKombinasi = false;
 else if (selectedStatusFilter === "OFFLINE" && !statusAlatOffline) lolosFilterKombinasi = false;
@@ -994,7 +959,6 @@ else if (selectedStatusFilter === "AMAN" && (statusAlatOffline || !statusStr.inc
 else if (selectedStatusFilter === "WASPADA" && (statusAlatOffline || !statusStr.includes("WASPADA"))) lolosFilterKombinasi = false;
 else if (selectedStatusFilter === "BAHAYA" && (statusAlatOffline || !statusStr.includes("BAHAYA"))) lolosFilterKombinasi = false;
 }
-
 if (lolosFilterKombinasi && attr.latitude && attr.longitude) {
 const lat = parseToValidCoord(attr.latitude, false);
 const lng = parseToValidCoord(attr.longitude, true);
@@ -1002,22 +966,19 @@ const waktuBersih = formatWaktuIndo(attr.created_at);
 if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><span style='color:green; font-weight:bold;'>Berhasil Plotting ke Peta</span>`;
 if (lat !== null && lng !== null) {
 markerGroup.clearLayers();
-let warnaMarker = "#008000"; 
-if (statusAlatOffline) { warnaMarker = "#808080"; } 
+let warnaMarker = "#008000";
+if (statusAlatOffline) { warnaMarker = "#808080"; }
 else {
 if (statusStr.includes("WASPADA")) warnaMarker = "#ffcc00";
 if (statusStr.includes("BAHAYA")) warnaMarker = "#ff0000";
 }
-
 var radarIcon = L.divIcon({
 className: 'radar-marker-wrapper',
 html: `<div class="radar-marker-element" style="background-color: ${warnaMarker}; border-color: #ffffff;"></div>`,
 iconSize: [16, 16],
 iconAnchor: [8, 8]
 });
-
 var liveMarker = L.marker([lat, lng], { icon: radarIcon }).addTo(markerGroup);
-
 liveMarker.on('click', function() {
 document.getElementById('panel-device-title').innerText = `Detail Atribut: ${attr.nama_titik}`;
 let tableRowHtml = `
@@ -1041,17 +1002,22 @@ let tableRowHtml = `
 </tr>
 `;
 document.getElementById('panel-table-body').innerHTML = tableRowHtml;
-
-document.getElementById('btn-maps-route').onclick = function() { prosesRuteJalanInternal(lat, lng); };
-document.getElementById('btn-maps-start').onclick = function() {
-if (internalRoutingControl) { bersihkanRuteInternal(); } else { prosesRuteJalanInternal(lat, lng); }
+document.getElementById('btn-maps-route').onclick = function() {
+isNavigatingActive = false;
+prosesRuteJalanInternal(lat, lng);
 };
-
+document.getElementById('btn-maps-start').onclick = function() {
+if (internalRoutingControl) {
+bersihkanRuteInternal();
+} else {
+isNavigatingActive = true;
+prosesRuteJalanInternal(lat, lng);
+}
+};
 document.getElementById('bottom-attribute-panel').classList.add('active');
 });
-
 if (isFirstLoad) {
-map.setView([lat, lng], 12); 
+map.setView([lat, lng], 12);
 isFirstLoad = false;
 }
 }
@@ -1063,63 +1029,58 @@ tutupPanelAtribut();
 if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><span style='color:orange; font-weight:bold;'>Data Disembunyikan Filter</span>`;
 }
 }
-
 function prosesRuteJalanInternal(destLat, destLng) {
 if (!currentPositionUser) {
 alert("Lokasi GPS Anda belum terkunci! Pastikan izin lokasi browser Anda aktif.");
 return;
 }
 bersihkanRuteInternal();
-
+currentDestinationLat = destLat;
+currentDestinationLng = destLng;
 internalRoutingControl = L.Routing.control({
 waypoints: [
 L.latLng(currentPositionUser.lat, currentPositionUser.lng),
 L.latLng(destLat, destLng)
 ],
 router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
-fitSelectedRoutes: false, 
+fitSelectedRoutes: false,
 lineOptions: { styles: [{ color: '#1a73e8', opacity: 0.85, weight: 6 }] },
-createMarker: function() { return null; } 
+createMarker: function() { return null; }
 }).addTo(map);
-
 internalRoutingControl.on('routesfound', function(e) {
 var routes = e.routes;
 var summary = routes[0].summary;
 var jarakKm = (summary.totalDistance / 1000).toFixed(2);
-var waktuMenit = Math.round(summary.totalTime / 60);
-var teksWaktu = waktuMenit + " menit";
-if (waktuMenit > 60) {
-var jam = Math.floor(waktuMenit / 60);
-var sisaMenit = waktuMenit % 60;
+var waktuMenitStandar = Math.round(summary.totalTime / 60);
+var waktuMenitKebun = Math.round(waktuMenitStandar * 2.2);
+var teksWaktu = waktuMenitKebun + " menit";
+if (waktuMenitKebun > 60) {
+var jam = Math.floor(waktuMenitKebun / 60);
+var sisaMenit = waktuMenitKebun % 60;
 teksWaktu = jam + " jam " + sisaMenit + " menit";
 }
-
 document.getElementById('route-distance-val').innerText = jarakKm + " Km";
 document.getElementById('route-time-val').innerText = teksWaktu;
 document.getElementById('live-route-info').style.display = "block";
-
 var bounds = L.latLngBounds([[currentPositionUser.lat, currentPositionUser.lng], [destLat, destLng]]);
 map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
 });
 }
-
 function bersihkanRuteInternal() {
 if (internalRoutingControl) {
 map.removeControl(internalRoutingControl);
 internalRoutingControl = null;
 }
 document.getElementById('live-route-info').style.display = "none";
+isNavigatingActive = false;
+currentDestinationLat = null;
+currentDestinationLng = null;
 }
-
-/* ==========================================================================
-SISTEM MULTI-SHARE UNTUK WEB & APK WEBVIEW (UNIVERSAL - NATIVE PRIORITY FIXED)
-========================================================================== */
 let teksDisiapkanUntukShare = "";
-
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+const googleMapsLink = `http://googleusercontent.com/maps.google.com/?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1130,17 +1091,13 @@ text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
 `Buka rute langsung di Google Maps:\n${googleMapsLink}`
 };
 }
-
 function jalankanFiturShare() {
 if (!currentCloudData) {
 alert("Data belum siap untuk dibagikan!");
 return;
 }
-
 const shareData = rakitTeksShare();
 teksDisiapkanUntukShare = shareData.text;
-
-// Langkah 1: Selalu utamakan memicu Native Share Sheet bawaan OS/Browser HP
 if (navigator.share) {
 navigator.share({
 title: shareData.title,
@@ -1148,44 +1105,35 @@ text: teksDisiapkanUntukShare
 })
 .then(() => console.log('Berhasil memicu Native Share Sheet.'))
 .catch((err) => {
-// Jika user sengaja membatalkan/menutup Native Share (AbortError), diamkan saja.
-// Tapi jika error karena sistem webview memblokir Share API, tampilkan modal kustom sebagai gantinya.
 if (err.name !== 'AbortError') {
 bukaModalKustom(teksDisiapkanUntukShare);
 }
 });
 } else {
-// Langkah 2: Jika browser/WebView tidak mendukung navigator.share, tampilkan modal pilihan kustom
 bukaModalKustom(teksDisiapkanUntukShare);
 }
 }
-
 function bukaModalKustom(teksLengkap) {
 teksDisiapkanUntukShare = teksLengkap;
 document.getElementById('shareModal').style.display = "flex";
 }
-
 function tutupShareModal(event) {
 document.getElementById('shareModal').style.display = "none";
 }
-
 function shareKeWA() {
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
 window.open(`whatsapp://send?text=${textEncoded}`, '_blank');
 tutupShareModal();
 }
-
 function shareKeTelegram() {
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
 window.open(`tg://msg?text=${textEncoded}`, '_blank');
 tutupShareModal();
 }
-
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
-
+const googleMapsLink = `http://googleusercontent.com/maps.google.com/?q=${lat},${lng}`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan Google Maps berhasil disalin!");
 }).catch(() => {
@@ -1199,18 +1147,14 @@ alert("Tautan Google Maps berhasil disalin!");
 });
 tutupShareModal();
 }
-
 function tutupPanelAtribut() {
 document.getElementById('bottom-attribute-panel').classList.remove('active');
 bersihkanRuteInternal();
 }
-
 map.locate({ setView: false, watch: true, enableHighAccuracy: true, timeout: 10000 });
-
 map.on('locationfound', function(e) {
 currentPositionUser = e.latlng;
 userLocationLayer.clearLayers();
-
 var userIcon = L.divIcon({
 className: 'user-gps-marker',
 html: '<div style="background-color: #007bff; width: 14px; height: 14px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,123,255,0.8); position: relative;">' +
@@ -1219,57 +1163,50 @@ html: '<div style="background-color: #007bff; width: 14px; height: 14px; border-
 iconSize: [14, 14],
 iconAnchor: [7, 7]
 });
-
 L.marker(e.latlng, { icon: userIcon, zIndexOffset: 1000 }).addTo(userLocationLayer);
+if (isNavigatingActive && internalRoutingControl && currentDestinationLat && currentDestinationLng) {
+internalRoutingControl.setWaypoints([
+L.latLng(e.latlng.lat, e.latlng.lng),
+L.latLng(currentDestinationLat, currentDestinationLng)
+]);
+}
 });
-
 map.on('locationerror', function(e) {
 const statusDebug = document.getElementById('debug-text');
 if (statusDebug) { statusDebug.innerHTML = `<span style='color:orange; font-weight:bold;'>GPS Device: ${e.message}</span>`; }
 });
-
-// ==========================================================================
-// FIX UTAMA MUTLAK: BYPASS TOTAL DAN DETEKSI SENTUH KOORDINAT MURNI (HARDWARE MODE)
-// ==========================================================================
 const panelBawahContainer = document.getElementById('bottom-attribute-panel');
 const tableScrollBox = document.getElementById('scroll-table-container');
-
 if (panelBawahContainer && tableScrollBox) {
 L.DomEvent.disableScrollPropagation(panelBawahContainer);
 L.DomEvent.disableClickPropagation(panelBawahContainer);
-
 let startX = 0;
 let scrollLeftStart = 0;
 let isMovingTable = false;
-
 tableScrollBox.addEventListener('touchstart', function(e) {
 isMovingTable = true;
-map.dragging.disable(); 
+map.dragging.disable();
 startX = e.touches[0].pageX - tableScrollBox.offsetLeft;
 scrollLeftStart = tableScrollBox.scrollLeft;
 e.stopPropagation();
 }, { passive: true });
-
 tableScrollBox.addEventListener('touchmove', function(e) {
 if (!isMovingTable) return;
 const currentX = e.touches[0].pageX - tableScrollBox.offsetLeft;
-const walkX = (currentX - startX); 
+const walkX = (currentX - startX);
 tableScrollBox.scrollLeft = scrollLeftStart - walkX;
 e.stopPropagation();
-if(e.cancelable) e.preventDefault(); 
+if(e.cancelable) e.preventDefault();
 }, { passive: false });
-
 tableScrollBox.addEventListener('touchend', function() {
 isMovingTable = false;
-map.dragging.enable(); 
+map.dragging.enable();
 }, { passive: true });
-
 tableScrollBox.addEventListener('touchcancel', function() {
 isMovingTable = false;
 map.dragging.enable();
 }, { passive: true });
 }
-
 fetchOnlineData();
 setInterval(fetchOnlineData, 10000);
 </script>
