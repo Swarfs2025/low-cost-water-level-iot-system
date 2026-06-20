@@ -267,22 +267,25 @@ cursor: pointer;
 line-height: 1;
 }
 
-/* MODIFIKASI DISINI: MENJAMIN SCROLL KANAN-KIRI BERJALAN SEMPURNA */
+/* PERBAIKAN CSS: MEMASTIKAN SCROLL BAR AKTIF & DAPAT MERESPON TOUCH SECARA NATIVE */
 .table-responsive-container {
-overflow-x: auto;
-overflow-y: hidden; /* Fokus pada scroll horizontal */
+overflow-x: auto !important;
+overflow-y: hidden !important;
 width: 100%;
-max-height: 130px; /* Mengunci max-height tabel agar sisa ruang bawah tidak menganga */
+max-height: 130px; 
 background: #fff;
 border: 1px solid #ddd;
 border-radius: 4px;
 display: block;
--webkit-overflow-scrolling: touch; /* Membuat scroll terasa smooth/fluid di iOS & Android */
+-webkit-overflow-scrolling: touch !important; /* Dukungan smooth scrolling perangkat seluler */
+touch-action: auto !important; /* Mengizinkan interaksi touch browser default di area ini */
+position: relative;
+z-index: 1010;
 }
 
 .grid-table {
 width: 100%;
-min-width: 1450px; /* DINAIKKAN AGAR 16 KOLOM MEMBERIKAN RUANG LUAP YANG CUKUP UNTUK SCROLL */
+min-width: 1500px; /* Lebar minimum ruang kolom agar efek luapan memicu scroll aktif */
 border-collapse: collapse;
 font-size: 11px;
 white-space: nowrap;
@@ -1102,6 +1105,7 @@ alert(`Informasi status dan koordinat alat sukses disalin ke Clipboard!\n\n${tex
 }
 
 function tutupPanelAtribut() {
+document.getElementById('bottom-attribute-panel').classList.remove('remove');
 document.getElementById('bottom-attribute-panel').classList.remove('active');
 bersihkanRuteInternal();
 }
@@ -1139,35 +1143,40 @@ console.log("Akses Geolocation bermasalah: " + e.message);
 });
 
 // ==========================================================================
-// INTERSEPSI INPUT SENTUH NATIVE: KUNCI TOTAL GERAKAN PETA LATAR BELAKANG
+// INTERSEPSI INPUT SENTUH NATIVE: SISTEM BYPASS TOTAL AGAR SCROLL MANDIRI
 // ==========================================================================
 const panelAtributElemen = document.getElementById('bottom-attribute-panel');
 if (panelAtributElemen) {
-L.DomEvent.disableScrollPropagation(panelAtributElemen);
-L.DomEvent.disableClickPropagation(panelAtributElemen);
-panelAtributElemen.addEventListener('touchstart', function(e) {
-const isInsideTable = e.target.closest('.table-responsive-container');
-if (!isInsideTable) {
-map.dragging.disable();
-}
-}, { passive: false });
+    // Matikan propagasi event bawaan Leaflet secara menyeluruh untuk panel bawah
+    L.DomEvent.disableScrollPropagation(panelAtributElemen);
+    L.DomEvent.disableClickPropagation(panelAtributElemen);
 
-panelAtributElemen.addEventListener('touchmove', function(e) {
-const isInsideTable = e.target.closest('.table-responsive-container');
+    panelAtributElemen.addEventListener('touchstart', function(e) {
+        const isInsideTable = e.target.closest('.table-responsive-container');
+        if (isInsideTable) {
+            // Hentikan peta agar tidak ikut membaca pergerakan menyeret layar
+            map.dragging.disable();
+            e.stopPropagation();
+        } else {
+            map.dragging.disable();
+        }
+    }, { passive: true });
 
-// PERBAIKAN DISINI: Jika jari menyentuh/menggeser area tabel, abaikan intercept script agar scroll horizontal berjalan lancar bawaan browser
-if (isInsideTable) {
-e.stopPropagation();
-return; 
-}
+    panelAtributElemen.addEventListener('touchmove', function(e) {
+        const isInsideTable = e.target.closest('.table-responsive-container');
+        if (isInsideTable) {
+            // Lepaskan kontrol sepenuhnya ke browser native untuk menggeser tabel ke kiri-kanan
+            e.stopPropagation();
+            return; 
+        }
+        e.preventDefault();
+        e.stopPropagation();
+    }, { passive: false });
 
-e.preventDefault();
-e.stopPropagation();
-}, { passive: false });
-
-panelAtributElemen.addEventListener('touchend', function() {
-map.dragging.enable();
-});
+    panelAtributElemen.addEventListener('touchend', function() {
+        // Aktifkan kembali kontrol geser peta setelah jari dilepas
+        map.dragging.enable();
+    });
 }
 
 fetchOnlineData();
