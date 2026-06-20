@@ -24,7 +24,7 @@ overflow: hidden;
 }
 /* ==========================================================================
 DESAIN SPLASH SCREEN KUSTOM PREMIUM (MURNI TEKS & GRADASI MERAH)
-========================================================================== */
+========================================================================= */
 #splash-screen {
 position: fixed;
 top: 0;
@@ -1010,7 +1010,7 @@ internalRoutingControl = null;
 document.getElementById('live-route-info').style.display = "none";
 }
 
-/* MODIFIKASI BYPASS WEBVIEW APK: Langsung menembak URL WhatsApp API secara universal tanpa popup */
+/* MODIFIKASI: Menggunakan Web Share API agar memicu Lembar Berbagi Sistem Android */
 function jalankanFiturShare() {
 if (!currentCloudData) {
 alert("Data belum siap untuk dibagikan!");
@@ -1018,7 +1018,7 @@ return;
 }
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+const googleMapsLink = `http://googleusercontent.com/maps.google.com/?q=${lat},${lng}`;
 const textShare = `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
                   `📍 *Titik:* ${currentCloudData.nama_titik}\n` +
                   `📊 *Status:* ${currentCloudData.status}\n` +
@@ -1026,9 +1026,19 @@ const textShare = `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
                   `🗺️ *Lokasi:* ${currentCloudData.estate} - ${currentCloudData.blok}\n\n` +
                   `Buka rute langsung di Google Maps:\n${googleMapsLink}`;
 
+// Cek apakah browser / WebView mendukung Native Share API bawaan sistem HP
+if (navigator.share) {
+navigator.share({
+title: `Monitoring ${currentCloudData.nama_titik}`,
+text: textShare
+})
+.then(() => console.log('Berhasil memicu lembar share bawaan sistem'))
+.catch((error) => console.log('Share dibatalkan atau error:', error));
+} else {
+// Fallback cadangan otomatis ke WhatsApp jika WebView memblokir fitur sistem share
 const textEncoded = encodeURIComponent(textShare);
-// Bypass total Native Share API yang sering didepak/diblokir oleh WebView Android di 2APK Builder
 window.open(`https://api.whatsapp.com/send?text=${textEncoded}`, '_blank');
+}
 }
 
 function tutupPanelAtribut() {
