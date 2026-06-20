@@ -270,7 +270,7 @@ line-height: 1;
 /* MODIFIKASI DISINI: MENJAMIN SCROLL KANAN-KIRI BERJALAN SEMPURNA */
 .table-responsive-container {
 overflow-x: auto;
-overflow-y: auto;
+overflow-y: hidden; /* Fokus pada scroll horizontal */
 width: 100%;
 max-height: 130px; /* Mengunci max-height tabel agar sisa ruang bawah tidak menganga */
 background: #fff;
@@ -282,7 +282,7 @@ display: block;
 
 .grid-table {
 width: 100%;
-min-width: 1200px; /* MEMAKSA TABEL MEMILIKI LEBAR MINIMUM AGAR 16 KOLOM BISA DI-SCROLL TANPA MENYUSUT */
+min-width: 1450px; /* DINAIKKAN AGAR 16 KOLOM MEMBERIKAN RUANG LUAP YANG CUKUP UNTUK SCROLL */
 border-collapse: collapse;
 font-size: 11px;
 white-space: nowrap;
@@ -1069,7 +1069,7 @@ var bounds = L.latLngBounds([
 ]);
 map.fitBounds(bounds, {
 padding: [50, 50], // Memberikan ruang aman 50 piksel di tepi layar APK agar tidak mepet
-maxZoom: 16        // Mencegah peta terlalu zoom in ekstrim jika jarak Anda sangat dekat dengan alat
+maxZoom: 16 // Mencegah peta terlalu zoom in ekstrim jika jarak Anda sangat dekat dengan alat
 });
 });
 }
@@ -1143,34 +1143,31 @@ console.log("Akses Geolocation bermasalah: " + e.message);
 // ==========================================================================
 const panelAtributElemen = document.getElementById('bottom-attribute-panel');
 if (panelAtributElemen) {
-    L.DomEvent.disableScrollPropagation(panelAtributElemen);
-    L.DomEvent.disableClickPropagation(panelAtributElemen);
-    
-    panelAtributElemen.addEventListener('touchstart', function(e) {
-        const isInsideTable = e.target.closest('.table-responsive-container');
-        if (!isInsideTable) {
-            map.dragging.disable();
-        }
-    }, { passive: false });
+L.DomEvent.disableScrollPropagation(panelAtributElemen);
+L.DomEvent.disableClickPropagation(panelAtributElemen);
+panelAtributElemen.addEventListener('touchstart', function(e) {
+const isInsideTable = e.target.closest('.table-responsive-container');
+if (!isInsideTable) {
+map.dragging.disable();
+}
+}, { passive: false });
 
-    panelAtributElemen.addEventListener('touchmove', function(e) {
-        const container = document.querySelector('.table-responsive-container');
-        const isInsideTable = e.target.closest('.table-responsive-container');
+panelAtributElemen.addEventListener('touchmove', function(e) {
+const isInsideTable = e.target.closest('.table-responsive-container');
 
-        if (isInsideTable) {
-            const isScrollable = container.scrollHeight > container.clientHeight;
-            if (isScrollable) {
-                e.stopPropagation();
-                return; 
-            }
-        }
-        e.preventDefault();
-        e.stopPropagation();
-    }, { passive: false });
+// PERBAIKAN DISINI: Jika jari menyentuh/menggeser area tabel, abaikan intercept script agar scroll horizontal berjalan lancar bawaan browser
+if (isInsideTable) {
+e.stopPropagation();
+return; 
+}
 
-    panelAtributElemen.addEventListener('touchend', function() {
-        map.dragging.enable();
-    });
+e.preventDefault();
+e.stopPropagation();
+}, { passive: false });
+
+panelAtributElemen.addEventListener('touchend', function() {
+map.dragging.enable();
+});
 }
 
 fetchOnlineData();
