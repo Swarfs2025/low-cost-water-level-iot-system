@@ -84,6 +84,7 @@ letter-spacing: 1px;
 from { opacity: 0; transform: translateY(10px); }
 to { opacity: 1; transform: translateY(0); }
 }
+
 /* ==========================================================================
 STRUKTUR PURE CSS HAMBURGER & CONTAINER MENU BERLAPIS
 ========================================================================== */
@@ -153,6 +154,7 @@ opacity: 0;
 #menu-toggle:checked ~ .hamburger-label span:nth-child(3) {
 transform: translateY(-7px) rotate(-45deg);
 }
+
 /* ==========================================================================
 UI: GLASSMORPHISM PANEL
 ========================================================================== */
@@ -198,6 +200,7 @@ flex-shrink: 0;
 .google-thumbnail { aspect-ratio: 1.4 / 1 !important; border-radius: 6px !important; }
 #bottom-attribute-panel { width: 100% !important; height: auto !important; max-height: 340px !important; border-radius: 0 !important; }
 }
+
 /* ==========================================================================
 PANEL ATRIBUT BAWAH LAYAR WAJIB NATIVE SCROLL
 ========================================================================== */
@@ -281,6 +284,7 @@ background: #fff;
 .grid-table tr:nth-child(even) td {
 background: #f9f9f9;
 }
+
 /* ==========================================================================
 PERBAIKAN WARNA UTAMA: PIL-SHAPE ACTION BAR MENJADI BIRU GOOGLE MAPS
 ========================================================================== */
@@ -311,7 +315,6 @@ transition: all 0.2s ease;
 box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 font-family: inherit;
 }
-/* Tombol Rute Dominan Biru */
 .btn-google-rute {
 background-color: #1a73e8;
 color: #ffffff;
@@ -326,7 +329,6 @@ display: flex;
 align-items: center;
 justify-content: center;
 }
-/* Tombol Mulai Biru Muda Lembut Premium */
 .btn-google-light {
 background-color: #e8f0fe;
 color: #1a73e8;
@@ -342,7 +344,6 @@ transform: translateY(-1px);
 .nav-btn:active {
 transform: translateY(0);
 }
-/* Box Info Rute Atas Aksen Biru */
 .live-route-info-box {
 display: none; 
 padding: 4px 10px;
@@ -354,6 +355,7 @@ font-weight: bold;
 color: #1a73e8;
 margin-bottom: 2px;
 }
+
 /* ==========================================================================
 LAYOUT GRID JENIS PETA & DETAIL PETA
 ========================================================================== */
@@ -474,15 +476,90 @@ z-index: -1;
 .leaflet-routing-container {
 display: none !important;
 }
-
-/* MODIFIKASI TERKUNCI: Memaksa SVG Polyline Rute Leaflet Menjadi Biru Google Maps Secara Mutlak */
 .leaflet-overlay-pane svg path {
 stroke: #1a73e8 !important;
 stroke-opacity: 0.90 !important;
 }
+
+/* ==========================================================================
+KUSTOM DIALOG MODAL SHARE BARU (UNTUK FALLBACK JIKA WEB SHARE DI-BLOKIR WEBVIEW)
+========================================================================== */
+.custom-share-modal {
+display: none;
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(0, 0, 0, 0.5);
+z-index: 99999;
+justify-content: center;
+align-items: flex-end;
+}
+.share-modal-content {
+background: #ffffff;
+width: 100%;
+max-width: 500px;
+border-radius: 16px 16px 0 0;
+padding: 20px;
+box-sizing: border-box;
+animation: slideUp 0.3s ease-out;
+box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+}
+.share-modal-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 15px;
+border-bottom: 1px solid #eee;
+padding-bottom: 10px;
+}
+.share-modal-header h3 {
+margin: 0;
+font-size: 16px;
+color: #333;
+}
+.share-grid {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 15px;
+margin-bottom: 15px;
+}
+.share-option {
+display: flex;
+flex-direction: column;
+align-items: center;
+text-decoration: none;
+color: #333;
+font-size: 12px;
+cursor: pointer;
+background: none;
+border: none;
+padding: 10px 0;
+}
+.share-icon-btn {
+width: 50px;
+height: 50px;
+border-radius: 50%;
+display: flex;
+justify-content: center;
+align-items: center;
+color: white;
+font-size: 22px;
+margin-bottom: 6px;
+box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+.bg-wa { background: #25D366; }
+.bg-tg { background: #0088cc; }
+.bg-copy { background: #6c757d; }
+@keyframes slideUp {
+from { transform: translateY(100%); }
+to { transform: translateY(0); }
+}
 </style>
 </head>
 <body>
+
 <div id="splash-screen">
 <div class="splash-content">
 <h1 class="splash-title">LCWL 2.0</h1>
@@ -491,12 +568,14 @@ stroke-opacity: 0.90 !important;
 <small id="splash-status">MENGHUBUNGKAN KE SERVER CLOUD...</small>
 </div>
 </div>
+
 <input type="checkbox" id="menu-toggle">
 <label for="menu-toggle" class="hamburger-label">
 <span></span>
 <span></span>
 <span></span>
 </label>
+
 <div class="menu-drawer-container">
 <div id="upload-panel">
 <b style="color: #1a73e8;">Koneksi Cloud Google:</b>
@@ -657,6 +736,29 @@ stroke-opacity: 0.90 !important;
 </button>
 <button id="btn-maps-share" class="nav-btn btn-google-light" onclick="jalankanFiturShare()">
 <i class="fa-solid fa-share-nodes"></i> Bagikan
+</button>
+</div>
+</div>
+</div>
+
+<div id="shareModal" class="custom-share-modal" onclick="tutupShareModal(event)">
+<div class="share-modal-content" onclick="event.stopPropagation()">
+<div class="share-modal-header">
+<h3>Bagikan Melalui</h3>
+<button class="close-panel-btn" onclick="document.getElementById('shareModal').style.display='none'">×</button>
+</div>
+<div class="share-grid">
+<button class="share-option" onclick="shareKeWA()">
+<div class="share-icon-btn bg-wa"><i class="fa-brands fa-whatsapp"></i></div>
+<span>WhatsApp</span>
+</button>
+<button class="share-option" onclick="shareKeTelegram()">
+<div class="share-icon-btn bg-tg"><i class="fa-brands fa-telegram"></i></div>
+<span>Telegram</span>
+</button>
+<button class="share-option" onclick="salinTautanKeClipboard()">
+<div class="share-icon-btn bg-copy"><i class="fa-solid fa-copy"></i></div>
+<span>Salin Tautan</span>
 </button>
 </div>
 </div>
@@ -976,7 +1078,6 @@ L.latLng(destLat, destLng)
 ],
 router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
 fitSelectedRoutes: false, 
-/* Jalur rute diubah menjadi biru pekat Google Maps (#1a73e8) */
 lineOptions: { styles: [{ color: '#1a73e8', opacity: 0.85, weight: 6 }] },
 createMarker: function() { return null; } 
 }).addTo(map);
@@ -1010,25 +1111,94 @@ internalRoutingControl = null;
 document.getElementById('live-route-info').style.display = "none";
 }
 
-/* MODIFIKASI BYPASS WEBVIEW APK: Langsung menembak URL WhatsApp API secara universal tanpa popup */
+/* ==========================================================================
+SISTEM MULTI-SHARE UNTUK WEB & APK WEBVIEW (UNIVERSAL)
+========================================================================== */
+function rakitTeksShare() {
+const lat = parseToValidCoord(currentCloudData.latitude, false);
+const lng = parseToValidCoord(currentCloudData.longitude, true);
+const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+return {
+title: `Monitoring: ${currentCloudData.nama_titik}`,
+text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
+`📍 *Titik:* ${currentCloudData.nama_titik}\n` +
+`📊 *Status:* ${currentCloudData.status}\n` +
+`📏 *TMA:* ${currentCloudData.tinggi_muka_air} cm\n` +
+`🗺️ *Lokasi:* ${currentCloudData.estate} - ${currentCloudData.blok}\n\n` +
+`Buka rute langsung di Google Maps:`,
+url: googleMapsLink
+};
+}
+
 function jalankanFiturShare() {
 if (!currentCloudData) {
 alert("Data belum siap untuk dibagikan!");
 return;
 }
+
+const shareData = rakitTeksShare();
+const fullText = `${shareData.text}\n${shareData.url}`;
+
+// Langkah 1: Coba gunakan Native Share API (Bawaan HP Android jika didukung WebView)
+if (navigator.share) {
+navigator.share({
+title: shareData.title,
+text: fullText
+})
+.then(() => console.log('Berhasil membagikan data.'))
+.catch((err) => {
+// Jika user cancel atau error ringan, abaikan, tapi jika fatal, buka fallback kustom modal
+if (err.name !== 'AbortError') {
+bukaModalKustom(fullText);
+}
+});
+} else {
+// Langkah 2: Jika WebView tidak mendukung Native share, panggil dialog popup kustom
+bukaModalKustom(fullText);
+}
+}
+
+let teksDisiapkanUntukShare = "";
+
+function bukaModalKustom(teksLengkap) {
+teksDisiapkanUntukShare = teksLengkap;
+document.getElementById('shareModal').style.display = "flex";
+}
+
+function tutupShareModal(event) {
+document.getElementById('shareModal').style.display = "none";
+}
+
+function shareKeWA() {
+const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
+window.open(`https://api.whatsapp.com/send?text=${textEncoded}`, '_blank');
+tutupShareModal();
+}
+
+function shareKeTelegram() {
+const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
+window.open(`https://t.me/share/url?url=&text=${textEncoded}`, '_blank');
+tutupShareModal();
+}
+
+function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
 const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
-const textShare = `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
-                  `📍 *Titik:* ${currentCloudData.nama_titik}\n` +
-                  `📊 *Status:* ${currentCloudData.status}\n` +
-                  `📏 *TMA:* ${currentCloudData.tinggi_muka_air} cm\n` +
-                  `🗺️ *Lokasi:* ${currentCloudData.estate} - ${currentCloudData.blok}\n\n` +
-                  `Buka rute langsung di Google Maps:\n${googleMapsLink}`;
 
-const textEncoded = encodeURIComponent(textShare);
-// Bypass total Native Share API yang sering didepak/diblokir oleh WebView Android di 2APK Builder
-window.open(`https://api.whatsapp.com/send?text=${textEncoded}`, '_blank');
+navigator.clipboard.writeText(googleMapsLink).then(() => {
+alert("Tautan Google Maps berhasil disalin!");
+}).catch(() => {
+// Metode cadangan jika Clipboard API diblok WebView lama
+const el = document.createElement('textarea');
+el.value = googleMapsLink;
+document.body.appendChild(el);
+el.select();
+document.execCommand('copy');
+document.body.removeChild(el);
+alert("Tautan Google Maps berhasil disalin!");
+});
+tutupShareModal();
 }
 
 function tutupPanelAtribut() {
