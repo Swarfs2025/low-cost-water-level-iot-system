@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Live WebGIS - Smart Water Level (Online Mode)</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
@@ -13,7 +13,7 @@ height: 100vh;
 width: 100%; 
 position: relative;
 z-index: 1; 
-background-color: #aad3df; /* Warna samudera ala Google Maps agar saat zoom out tidak kosong */
+background-color: #aad3df;
 }
 body { 
 margin: 0; 
@@ -196,7 +196,7 @@ flex-shrink: 0;
 #debug-panel { padding: 5px 8px; font-size: 10px; }
 .google-label-text { font-size: 9px !important; }
 .google-thumbnail { aspect-ratio: 1.4 / 1 !important; border-radius: 6px !important; }
-#bottom-attribute-panel { width: 100% !important; height: auto !important; max-height: 320px !important; border-radius: 0 !important; }
+#bottom-attribute-panel { width: 100% !important; height: auto !important; max-height: 340px !important; border-radius: 0 !important; }
 }
 .popup-table {
 width: 100%;
@@ -222,29 +222,29 @@ min-width: 260px;
 padding-right: 5px;
 }
 /* ==========================================================================
-PERBAIKAN UTAMA: PANEL ATRIBUT BAWAH LAYAR YANG PADAT & MINIM SPACE KOSONG
+PERBAIKAN CSS TOTAL: PANEL ATRIBUT BAWAH LAYAR WAJIB NATIVE SCROLL
 ========================================================================== */
 #bottom-attribute-panel {
 position: absolute;
-bottom: -400px;
+bottom: -450px;
 left: 50%;
 transform: translateX(-50%);
-width: 90%;
+width: 100%;
 max-width: 950px;
-height: auto; /* Otomatis mengikuti tinggi konten di dalamnya, menghilangkan blank space */
-max-height: 290px; /* Batas aman tinggi agar tidak menutupi peta */
-background: rgba(255, 255, 255, 0.94);
-backdrop-filter: blur(12px);
--webkit-backdrop-filter: blur(12px);
-z-index: 1000;
-border-radius: 12px 12px 0 0;
-box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
-padding: 10px 14px 10px 14px; /* Padding bawah dioptimalkan */
+height: auto; 
+max-height: 330px; 
+background: rgba(255, 255, 255, 0.98); /* Dibuat pekat agar text terbaca jelas */
+backdrop-filter: blur(15px);
+-webkit-backdrop-filter: blur(15px);
+z-index: 5000; /* Ditinggikan agar mutlak di atas seluruh layer leaflet */
+border-radius: 14px 14px 0 0;
+box-shadow: 0 -8px 30px rgba(0,0,0,0.35);
+padding: 12px 14px; 
 box-sizing: border-box;
-transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 display: flex;
 flex-direction: column;
-gap: 6px; 
+gap: 8px; 
 }
 #bottom-attribute-panel.active {
 bottom: 0;
@@ -255,60 +255,60 @@ justify-content: space-between;
 align-items: center;
 margin-bottom: 2px;
 border-bottom: 1.5px solid #0056b3;
-padding-bottom: 2px;
+padding-bottom: 4px;
 }
 .close-panel-btn {
 background: none;
 border: none;
-font-size: 20px;
+font-size: 24px;
 font-weight: bold;
 color: #ff0000;
 cursor: pointer;
 line-height: 1;
+padding: 0 5px;
 }
 
-/* PERBAIKAN CSS: MEMASTIKAN SCROLL BAR AKTIF & DAPAT MERESPON TOUCH SECARA NATIVE */
+/* CONTAINER TABEL: WAJIB DIBUAT OVERFLOW-X DENGAN TOUCH-ACTION ISOLATED */
 .table-responsive-container {
+width: 100%;
+max-height: 140px; 
 overflow-x: auto !important;
 overflow-y: hidden !important;
-width: 100%;
-max-height: 130px; 
-background: #fff;
-border: 1px solid #ddd;
-border-radius: 4px;
+background: #ffffff;
+border: 1px solid #ccc;
+border-radius: 6px;
 display: block;
--webkit-overflow-scrolling: touch !important; /* Dukungan smooth scrolling perangkat seluler */
-touch-action: auto !important; /* Mengizinkan interaksi touch browser default di area ini */
 position: relative;
-z-index: 1010;
+-webkit-overflow-scrolling: touch !important; 
+touch-action: pan-x !important; /* Batasi hanya menerima geseran horizontal */
 }
 
 .grid-table {
-width: 100%;
-min-width: 1500px; /* Lebar minimum ruang kolom agar efek luapan memicu scroll aktif */
+width: auto;
+min-width: 1600px; /* Paksa lebar tabel sangat panjang agar memicu overflow scroll */
 border-collapse: collapse;
-font-size: 11px;
-white-space: nowrap;
+font-size: 11.5px;
+white-space: nowrap !important; /* Mencegah kolom terlipat ke bawah */
+table-layout: auto;
 }
 .grid-table th {
 background: #0056b3;
 color: white;
-padding: 6px 10px;
+padding: 8px 12px;
 text-align: left;
-position: sticky;
-top: 0;
-z-index: 2;
+font-weight: bold;
 }
 .grid-table td {
-padding: 6px 10px;
+padding: 8px 12px;
 border-bottom: 1px solid #ddd;
-color: #222;
+color: #111;
+background: #fff;
 }
-.grid-table tr:nth-child(even) {
-background: rgba(0,0,0,0.02);
+.grid-table tr:nth-child(even) td {
+background: #f9f9f9;
 }
 /* ==========================================================================
-BARU: CSS EDITAN PIL-SHAPE PREMIUM (GOOGLE MAPS REAL PANEL STYLE)
+UI BUTTONS BAR ACTION
 ========================================================================== */
 .navigation-action-bar {
 display: flex;
@@ -366,7 +366,6 @@ transform: translateY(-1px);
 .nav-btn:active {
 transform: translateY(0);
 }
-/* DESAIN WADAH LIVE INFO RUTE (DI POPUP BAWAH) */
 .live-route-info-box {
 display: none; 
 padding: 4px 10px;
@@ -379,18 +378,9 @@ color: #004d61;
 margin-bottom: 2px;
 }
 /* ==========================================================================
-DESAIN LAYOUT GRID JENIS PETA & DETAIL PETA (GOOGLE MAPS STYLE)
+LAYOUT GRID JENIS PETA & DETAIL PETA
 ========================================================================== */
-.basemap-grid-container {
-display: grid;
-grid-template-columns: repeat(3, 1fr);
-gap: 5px;
-margin-top: 2px;
-margin-bottom: 4px;
-width: 100%;
-box-sizing: border-box;
-}
-.detail-grid-container {
+.basemap-grid-container, .detail-grid-container {
 display: grid;
 grid-template-columns: repeat(3, 1fr);
 gap: 5px;
@@ -426,10 +416,6 @@ align-items: center;
 position: relative;
 overflow: hidden;
 }
-.google-maps-card:hover .google-thumbnail {
-transform: scale(1.02);
-border-color: rgba(0, 86, 179, 0.2);
-}
 .google-label-text {
 margin-top: 2px;
 font-size: 9.5px;
@@ -447,9 +433,6 @@ box-shadow: 0 0 0 1px #ffffff, 0 2px 4px rgba(0,164,186,0.25);
 color: #00a4ba;
 font-weight: bold;
 }
-/* ==========================================================================
-CSS LAYER TITIK SEBARAN KUSTOM PADA GAMBAR PETA DEFAULT
-================================================================ layer */
 .map-bg-overlay {
 position: absolute;
 top: 0;
@@ -480,16 +463,11 @@ box-shadow: 0 0.5px 1.5px rgba(0,0,0,0.3);
 .dot-green { background-color: #008000; width: 4px; height: 4px; }
 .dot-yellow { background-color: #ffcc00; width: 4px; height: 4px; }
 .dot-red { background-color: #ff0000; width: 4px; height: 4px; }
-.dot-large {
-width: 6px;
-height: 6px;
-box-shadow: 0 0 2px rgba(0,0,0,0.5);
-}
+.dot-large { width: 6px; height: 6px; box-shadow: 0 0 2px rgba(0,0,0,0.5); }
 @keyframes gpsPulse {
 0% { transform: scale(1); opacity: 0.6; }
 100% { transform: scale(2.6); opacity: 0; }
 }
-/* ANIMASI DENYUT RADAR PROPOSIONAL UNTUK STASIUN IOT ALAT */
 @keyframes radarPulse {
 0% { transform: scale(0.6); opacity: 1; }
 100% { transform: scale(2.6); opacity: 0; }
@@ -654,7 +632,7 @@ display: none !important;
 <strong id="panel-device-title" style="color: #0056b3; font-size: 13px;">Detail Informasi Alat</strong>
 <button class="close-panel-btn" onclick="tutupPanelAtribut()">×</button>
 </div>
-<div class="table-responsive-container">
+<div class="table-responsive-container" id="scroll-table-container">
 <table class="grid-table">
 <thead>
 <tr>
@@ -710,14 +688,11 @@ const SPREADSHEET_ID = "12YVGi7-rCuTd1n2G8ZRA5GYo79RuznWvq1m2iyPb4OQ";
 const SHEET_GID = "1499191826";
 
 var map = L.map('map', {
-minZoom: 3, // Pembatasan zoom out agar tidak menyisakan ruang kosong (Full Screen Mode)
-worldCopyJump: true, // Marker diduplikasi otomatis secara horizontal saat peta digeser tiada batas
-maxBounds: [
-[-90, -180], 
-[90, 180] 
-],
+minZoom: 3, 
+worldCopyJump: true, 
+maxBounds: [[-90, -180], [90, 180]],
 maxBoundsViscosity: 1.0 
-}).setView([0, 0], 3); // View awal dinaikkan ke level 3 agar proporsional memenuhi layar penuh
+}).setView([0, 0], 3); 
 
 let isFirstLoad = true; 
 let currentCloudData = null; 
@@ -779,13 +754,9 @@ cleanStr = cleanStr.replace(/\./g, '').replace(/,/g, '.');
 let num = parseFloat(cleanStr);
 if (isNaN(num)) return null;
 if (isLongitude) {
-if (num > 180) {
-while (num > 180) num = num / 10;
-}
+if (num > 180) { while (num > 180) num = num / 10; }
 } else {
-if (num < -90) {
-while (num < -90) num = num / 10;
-}
+if (num < -90) { while (num < -90) num = num / 10; }
 }
 return num;
 }
@@ -890,9 +861,7 @@ applySmartFilter();
 const splash = document.getElementById('splash-screen');
 if (splash) {
 splash.style.opacity = '0';
-setTimeout(function() {
-splash.remove();
-}, 600);
+setTimeout(function() { splash.remove(); }, 600);
 }
 }
 
@@ -910,14 +879,11 @@ let waktuSistemSekarang = new Date();
 let waktuDataTerakhir = dapatkanObjekWaktu(attr.created_at);
 if (waktuDataTerakhir) {
 let selisihWaktuJam = Math.abs(waktuSistemSekarang - waktuDataTerakhir) / (1000 * 60 * 60);
-if (selisihWaktuJam > 1.0) {
-statusAlatOffline = true;
-}
+if (selisihWaktuJam > 1.0) { statusAlatOffline = true; }
 }
 const statusStr = (attr.status || "").toString().toUpperCase();
-if (statusStr.includes("OFFLINE")) {
-statusAlatOffline = true;
-}
+if (statusStr.includes("OFFLINE")) { statusAlatOffline = true; }
+
 if (attr.latitude && attr.longitude) {
 if (targetRegistered) targetRegistered.innerHTML = `Perangkat Terdaftar: <span style="font-weight: bold; color: #000000;">1</span>`;
 if (statusAlatOffline) {
@@ -927,14 +893,9 @@ if (targetOffline) targetOffline.innerHTML = `Perangkat Offline: <span style="fo
 if (targetOnline) targetOnline.innerHTML = `Perangkat Online: <span style="font-weight: bold; color: #008000;">1</span>`;
 if (targetOffline) targetOffline.innerHTML = `Perangkat Offline: <span style="font-weight: bold; color: #ff0000;">0</span>`;
 }
-} else {
-if (targetRegistered) targetRegistered.innerHTML = `Perangkat Terdaftar: <span style="font-weight: bold; color: #000000;">0</span>`;
-if (targetOnline) targetOnline.innerHTML = `Perangkat Online: <span style="font-weight: bold; color: #008000;">0</span>`;
-if (targetOffline) targetOffline.innerHTML = `Perangkat Offline: <span style="font-weight: bold; color: #ff0000;">0</span>`;
 }
 
 let lolosFilterKombinasi = true;
-
 const psmStr = (attr.psm || "").toString().toUpperCase();
 const estateStr = (attr.estate || "").toString().toUpperCase();
 if (keyword !== "" && !psmStr.includes(keyword) && !estateStr.includes(keyword)) {
@@ -957,9 +918,8 @@ if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><sp
 if (lat !== null && lng !== null) {
 markerGroup.clearLayers();
 let warnaMarker = "#008000"; 
-if (statusAlatOffline) {
-warnaMarker = "#808080";
-} else {
+if (statusAlatOffline) { warnaMarker = "#808080"; } 
+else {
 if (statusStr.includes("WASPADA")) warnaMarker = "#ffcc00";
 if (statusStr.includes("BAHAYA")) warnaMarker = "#ff0000";
 }
@@ -997,16 +957,9 @@ let tableRowHtml = `
 `;
 document.getElementById('panel-table-body').innerHTML = tableRowHtml;
 
-document.getElementById('btn-maps-route').onclick = function() {
-prosesRuteJalanInternal(lat, lng);
-};
-
+document.getElementById('btn-maps-route').onclick = function() { prosesRuteJalanInternal(lat, lng); };
 document.getElementById('btn-maps-start').onclick = function() {
-if (internalRoutingControl) {
-bersihkanRuteInternal();
-} else {
-prosesRuteJalanInternal(lat, lng);
-}
+if (internalRoutingControl) { bersihkanRuteInternal(); } else { prosesRuteJalanInternal(lat, lng); }
 };
 
 document.getElementById('bottom-attribute-panel').classList.add('active');
@@ -1019,11 +972,10 @@ isFirstLoad = false;
 }
 } else {
 markerGroup.clearLayers();
-// Proteksi Auto-Refresh: Jangan paksa tutup panel atribut jika user sedang aktif melihat detailnya
 if (!document.getElementById('bottom-attribute-panel').classList.contains('active')) {
 tutupPanelAtribut();
 }
-if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><span style='color:orange; font-weight:bold;'>Data Disembunyikan Filter</span><br><small style='color:#666;'>Filter Aktif: ${selectedStatusFilter}</small>`;
+if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><span style='color:orange; font-weight:bold;'>Data Disembunyikan Filter</span>`;
 }
 }
 
@@ -1039,13 +991,9 @@ waypoints: [
 L.latLng(currentPositionUser.lat, currentPositionUser.lng),
 L.latLng(destLat, destLng)
 ],
-router: L.Routing.osrmv1({
-serviceUrl: 'https://router.project-osrm.org/route/v1' 
-}),
-fitSelectedRoutes: false, // MENYEMBUNYIKAN AUTO-ZOOM PLUGIN AGAR TIDAK MENIMPA SKRIP KUSTOM KITA
-lineOptions: {
-styles: [{ color: '#007a87', opacity: 0.85, weight: 6 }] 
-},
+router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+fitSelectedRoutes: false, 
+lineOptions: { styles: [{ color: '#007a87', opacity: 0.85, weight: 6 }] },
 createMarker: function() { return null; } 
 }).addTo(map);
 
@@ -1065,15 +1013,8 @@ document.getElementById('route-distance-val').innerText = jarakKm + " Km";
 document.getElementById('route-time-val').innerText = teksWaktu;
 document.getElementById('live-route-info').style.display = "block";
 
-// OTOMATIS ZOOM PETA AGAR TITIK GPS USER DAN STASIUN TUJUAN TERLIHAT DENGAN JELAS SECARA MUTLAK
-var bounds = L.latLngBounds([
-[currentPositionUser.lat, currentPositionUser.lng],
-[destLat, destLng]
-]);
-map.fitBounds(bounds, {
-padding: [50, 50], // Memberikan ruang aman 50 piksel di tepi layar APK agar tidak mepet
-maxZoom: 16 // Mencegah peta terlalu zoom in ekstrim jika jarak Anda sangat dekat dengan alat
-});
+var bounds = L.latLngBounds([[currentPositionUser.lat, currentPositionUser.lng], [destLat, destLng]]);
+map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
 });
 }
 
@@ -1092,30 +1033,18 @@ const lng = parseToValidCoord(currentCloudData.longitude, true);
 const textShare = `Monitoring Air [${currentCloudData.nama_titik}]\nStatus: ${currentCloudData.status}\nKoordinat Lokasi Alat: ${lat}, ${lng}`;
 
 if (navigator.share) {
-navigator.share({
-title: `WebGIS Share - ${currentCloudData.nama_titik}`,
-text: textShare,
-url: window.location.href
-}).catch(err => console.log(err));
+navigator.share({ title: `WebGIS Share - ${currentCloudData.nama_titik}`, text: textShare, url: window.location.href }).catch(err => console.log(err));
 } else {
-navigator.clipboard.writeText(textShare).then(() => {
-alert(`Informasi status dan koordinat alat sukses disalin ke Clipboard!\n\n${textShare}`);
-});
+navigator.clipboard.writeText(textShare).then(() => { alert(`Informasi status dan koordinat alat sukses disalin ke Clipboard!\n\n${textShare}`); });
 }
 }
 
 function tutupPanelAtribut() {
-document.getElementById('bottom-attribute-panel').classList.remove('remove');
 document.getElementById('bottom-attribute-panel').classList.remove('active');
 bersihkanRuteInternal();
 }
 
-map.locate({
-setView: false, 
-watch: true, 
-enableHighAccuracy: true,
-timeout: 10000 
-});
+map.locate({ setView: false, watch: true, enableHighAccuracy: true, timeout: 10000 });
 
 map.on('locationfound', function(e) {
 currentPositionUser = e.latlng;
@@ -1130,53 +1059,62 @@ iconSize: [14, 14],
 iconAnchor: [7, 7]
 });
 
-L.marker(e.latlng, { icon: userIcon, zIndexOffset: 1000 })
-.addTo(userLocationLayer);
+L.marker(e.latlng, { icon: userIcon, zIndexOffset: 1000 }).addTo(userLocationLayer);
 });
 
 map.on('locationerror', function(e) {
 const statusDebug = document.getElementById('debug-text');
-if (statusDebug) {
-statusDebug.innerHTML = `<span style='color:orange; font-weight:bold;'>GPS Device: ${e.message}</span>`;
-}
-console.log("Akses Geolocation bermasalah: " + e.message);
+if (statusDebug) { statusDebug.innerHTML = `<span style='color:orange; font-weight:bold;'>GPS Device: ${e.message}</span>`; }
 });
 
 // ==========================================================================
-// INTERSEPSI INPUT SENTUH NATIVE: SISTEM BYPASS TOTAL AGAR SCROLL MANDIRI
+// FIX UTAMA MUTLAK: BYPASS TOTAL DAN DETEKSI SENTUH KOORDINAT MURNI (HARDWARE MODE)
 // ==========================================================================
-const panelAtributElemen = document.getElementById('bottom-attribute-panel');
-if (panelAtributElemen) {
-    // Matikan propagasi event bawaan Leaflet secara menyeluruh untuk panel bawah
-    L.DomEvent.disableScrollPropagation(panelAtributElemen);
-    L.DomEvent.disableClickPropagation(panelAtributElemen);
+const panelBawahContainer = document.getElementById('bottom-attribute-panel');
+const tableScrollBox = document.getElementById('scroll-table-container');
 
-    panelAtributElemen.addEventListener('touchstart', function(e) {
-        const isInsideTable = e.target.closest('.table-responsive-container');
-        if (isInsideTable) {
-            // Hentikan peta agar tidak ikut membaca pergerakan menyeret layar
-            map.dragging.disable();
-            e.stopPropagation();
-        } else {
-            map.dragging.disable();
-        }
+if (panelBawahContainer && tableScrollBox) {
+    // Matikan pemblokiran standar bawaan Leaflet secara total pada panel
+    L.DomEvent.disableScrollPropagation(panelBawahContainer);
+    L.DomEvent.disableClickPropagation(panelBawahContainer);
+
+    let startX = 0;
+    let scrollLeftStart = 0;
+    let isMovingTable = false;
+
+    // Deteksi manual koordinat sentuh jari tanpa lewat perantara event Leaflet
+    tableScrollBox.addEventListener('touchstart', function(e) {
+        isMovingTable = true;
+        map.dragging.disable(); // Kunci peta secara mutlak agar tidak ikut terseret
+        
+        startX = e.touches[0].pageX - tableScrollBox.offsetLeft;
+        scrollLeftStart = tableScrollBox.scrollLeft;
+        
+        e.stopPropagation();
     }, { passive: true });
 
-    panelAtributElemen.addEventListener('touchmove', function(e) {
-        const isInsideTable = e.target.closest('.table-responsive-container');
-        if (isInsideTable) {
-            // Lepaskan kontrol sepenuhnya ke browser native untuk menggeser tabel ke kiri-kanan
-            e.stopPropagation();
-            return; 
-        }
-        e.preventDefault();
+    tableScrollBox.addEventListener('touchmove', function(e) {
+        if (!isMovingTable) return;
+        
+        const currentX = e.touches[0].pageX - tableScrollBox.offsetLeft;
+        const walkX = (currentX - startX); // Hitung kalkulasi jarak geser jari
+        
+        // Geser container tabel secara langsung via native DOM manipulation
+        tableScrollBox.scrollLeft = scrollLeftStart - walkX;
+        
         e.stopPropagation();
+        if(e.cancelable) e.preventDefault(); // Paksa browser fokus hanya menggeser tabel
     }, { passive: false });
 
-    panelAtributElemen.addEventListener('touchend', function() {
-        // Aktifkan kembali kontrol geser peta setelah jari dilepas
+    tableScrollBox.addEventListener('touchend', function() {
+        isMovingTable = false;
+        map.dragging.enable(); // Hidupkan kembali fungsi geser peta saat jari diangkat
+    }, { passive: true });
+    
+    tableScrollBox.addEventListener('touchcancel', function() {
+        isMovingTable = false;
         map.dragging.enable();
-    });
+    }, { passive: true });
 }
 
 fetchOnlineData();
