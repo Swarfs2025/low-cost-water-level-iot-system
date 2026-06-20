@@ -1028,12 +1028,9 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 document.getElementById('btn-maps-start').onclick = function() {
-if (internalRoutingControl) {
-bersihkanRuteInternal();
-} else {
-isNavigatingActive = true;
-prosesRuteJalanInternal(lat, lng);
-}
+// MODIFIKASI: Langsung memicu Intent URL navigasi asli Google Maps ke koordinat alat
+const intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+window.open(intentGoogleMaps, '_blank');
 };
 document.getElementById('bottom-attribute-panel').classList.add('active');
 });
