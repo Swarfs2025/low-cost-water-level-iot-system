@@ -24,7 +24,7 @@ overflow: hidden;
 }
 /* ==========================================================================
 DESAIN SPLASH SCREEN KUSTOM PREMIUM (MURNI TEKS & GRADASI MERAH)
-========================================================================== */
+========================================================================= */
 #splash-screen {
 position: fixed;
 top: 0;
@@ -1028,7 +1028,7 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 document.getElementById('btn-maps-start').onclick = function() {
-// PERBAIKAN: Menggunakan Directions API resmi Google Maps agar langsung memicu mode navigasi belokan di aplikasi Android/iOS
+// MODIFIKASI: Menggunakan Universal Deep-Link Directions API resmi milik Google Maps agar memicu pembukaan aplikasi maps di perangkat mobile
 const intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
 window.open(intentGoogleMaps, '_blank');
 };
@@ -1118,7 +1118,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1171,7 +1171,7 @@ tutupShareModal();
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan Google Maps berhasil disalin!");
 }).catch(() => {
