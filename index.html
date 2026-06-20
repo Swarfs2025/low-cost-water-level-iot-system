@@ -474,6 +474,12 @@ z-index: -1;
 .leaflet-routing-container {
 display: none !important;
 }
+
+/* MODIFIKASI TERKUNCI: Memaksa SVG Polyline Rute Leaflet Menjadi Biru Google Maps Secara Mutlak */
+.leaflet-overlay-pane svg path {
+stroke: #1a73e8 !important;
+stroke-opacity: 0.90 !important;
+}
 </style>
 </head>
 <body>
@@ -970,7 +976,7 @@ L.latLng(destLat, destLng)
 ],
 router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
 fitSelectedRoutes: false, 
-/* CORRECTION: Jalur rute diubah menjadi biru pekat Google Maps (#1a73e8) */
+/* Jalur rute diubah menjadi biru pekat Google Maps (#1a73e8) */
 lineOptions: { styles: [{ color: '#1a73e8', opacity: 0.85, weight: 6 }] },
 createMarker: function() { return null; } 
 }).addTo(map);
@@ -1004,16 +1010,37 @@ internalRoutingControl = null;
 document.getElementById('live-route-info').style.display = "none";
 }
 
+/* MODIFIKASI TERKUNCI: Menggunakan Web Share API Native untuk melempar data langsung ke WhatsApp/Telegram */
 function jalankanFiturShare() {
-if (!currentCloudData) return;
+if (!currentCloudData) {
+alert("Data belum siap untuk dibagikan!");
+return;
+}
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const textShare = `Monitoring Air [${currentCloudData.nama_titik}]\nStatus: ${currentCloudData.status}\nKoordinat Lokasi Alat: ${lat}, ${lng}`;
+const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+const textShare = `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
+                  `📍 *Titik:* ${currentCloudData.nama_titik}\n` +
+                  `📊 *Status:* ${currentCloudData.status}\n` +
+                  `📏 *TMA:* ${currentCloudData.tinggi_muka_air} cm\n` +
+                  `🗺️ *Lokasi:* ${currentCloudData.estate} - ${currentCloudData.blok}\n\n` +
+                  `Buka rute langsung di Google Maps:\n${googleMapsLink}`;
 
 if (navigator.share) {
-navigator.share({ title: `WebGIS Share - ${currentCloudData.nama_titik}`, text: textShare, url: window.location.href }).catch(err => console.log(err));
+navigator.share({
+title: `LCWL 2.0 - ${currentCloudData.nama_titik}`,
+text: textShare
+}).catch(err => console.log(err));
 } else {
-navigator.clipboard.writeText(textShare).then(() => { alert(`Informasi status dan koordinat alat sukses disalin ke Clipboard!\n\n${textShare}`); });
+const textEncoded = encodeURIComponent(textShare);
+const opsiPilihan = confirm("Browser desktop dideteksi.\n\nKlik 'OK' untuk share ke WhatsApp Web, atau 'Cancel' untuk menyalin teks koordinat.");
+if (opsiPilihan) {
+window.open(`https://api.whatsapp.com/send?text=${textEncoded}`, '_blank');
+} else {
+navigator.clipboard.writeText(textShare).then(() => {
+alert(`Teks laporan sukses disalin ke Clipboard!`);
+});
+}
 }
 }
 
@@ -1052,39 +1079,39 @@ const panelBawahContainer = document.getElementById('bottom-attribute-panel');
 const tableScrollBox = document.getElementById('scroll-table-container');
 
 if (panelBawahContainer && tableScrollBox) {
-    L.DomEvent.disableScrollPropagation(panelBawahContainer);
-    L.DomEvent.disableClickPropagation(panelBawahContainer);
+L.DomEvent.disableScrollPropagation(panelBawahContainer);
+L.DomEvent.disableClickPropagation(panelBawahContainer);
 
-    let startX = 0;
-    let scrollLeftStart = 0;
-    let isMovingTable = false;
+let startX = 0;
+let scrollLeftStart = 0;
+let isMovingTable = false;
 
-    tableScrollBox.addEventListener('touchstart', function(e) {
-        isMovingTable = true;
-        map.dragging.disable(); 
-        startX = e.touches[0].pageX - tableScrollBox.offsetLeft;
-        scrollLeftStart = tableScrollBox.scrollLeft;
-        e.stopPropagation();
-    }, { passive: true });
+tableScrollBox.addEventListener('touchstart', function(e) {
+isMovingTable = true;
+map.dragging.disable(); 
+startX = e.touches[0].pageX - tableScrollBox.offsetLeft;
+scrollLeftStart = tableScrollBox.scrollLeft;
+e.stopPropagation();
+}, { passive: true });
 
-    tableScrollBox.addEventListener('touchmove', function(e) {
-        if (!isMovingTable) return;
-        const currentX = e.touches[0].pageX - tableScrollBox.offsetLeft;
-        const walkX = (currentX - startX); 
-        tableScrollBox.scrollLeft = scrollLeftStart - walkX;
-        e.stopPropagation();
-        if(e.cancelable) e.preventDefault(); 
-    }, { passive: false });
+tableScrollBox.addEventListener('touchmove', function(e) {
+if (!isMovingTable) return;
+const currentX = e.touches[0].pageX - tableScrollBox.offsetLeft;
+const walkX = (currentX - startX); 
+tableScrollBox.scrollLeft = scrollLeftStart - walkX;
+e.stopPropagation();
+if(e.cancelable) e.preventDefault(); 
+}, { passive: false });
 
-    tableScrollBox.addEventListener('touchend', function() {
-        isMovingTable = false;
-        map.dragging.enable(); 
-    }, { passive: true });
-    
-    tableScrollBox.addEventListener('touchcancel', function() {
-        isMovingTable = false;
-        map.dragging.enable();
-    }, { passive: true });
+tableScrollBox.addEventListener('touchend', function() {
+isMovingTable = false;
+map.dragging.enable(); 
+}, { passive: true });
+
+tableScrollBox.addEventListener('touchcancel', function() {
+isMovingTable = false;
+map.dragging.enable();
+}, { passive: true });
 }
 
 fetchOnlineData();
