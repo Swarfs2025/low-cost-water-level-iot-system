@@ -1114,10 +1114,12 @@ document.getElementById('live-route-info').style.display = "none";
 /* ==========================================================================
 SISTEM MULTI-SHARE UNTUK WEB & APK WEBVIEW (UNIVERSAL)
 ========================================================================== */
+let teksDisiapkanUntukShare = "";
+
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1125,8 +1127,7 @@ text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
 `📊 *Status:* ${currentCloudData.status}\n` +
 `📏 *TMA:* ${currentCloudData.tinggi_muka_air} cm\n` +
 `🗺️ *Lokasi:* ${currentCloudData.estate} - ${currentCloudData.blok}\n\n` +
-`Buka rute langsung di Google Maps:`,
-url: googleMapsLink
+`Buka rute langsung di Google Maps:\n${googleMapsLink}`
 };
 }
 
@@ -1137,28 +1138,37 @@ return;
 }
 
 const shareData = rakitTeksShare();
-const fullText = `${shareData.text}\n${shareData.url}`;
+teksDisiapkanUntukShare = shareData.text;
 
-// Langkah 1: Coba gunakan Native Share API (Bawaan HP Android jika didukung WebView)
+// Langkah 1: Gunakan Native Web Share API bawaan Android / Browser Mobile
 if (navigator.share) {
 navigator.share({
 title: shareData.title,
-text: fullText
+text: teksDisiapkanUntukShare
 })
-.then(() => console.log('Berhasil membagikan data.'))
+.then(() => console.log('Berhasil membuka native share.'))
 .catch((err) => {
-// Jika user cancel atau error ringan, abaikan, tapi jika fatal, buka fallback kustom modal
 if (err.name !== 'AbortError') {
-bukaModalKustom(fullText);
+// Jika native share diblokir / crash di dalam WebView, arahkan paksa via WhatsApp intents
+bukaAplikasiIntentsLangsung(teksDisiapkanUntukShare);
 }
 });
 } else {
-// Langkah 2: Jika WebView tidak mendukung Native share, panggil dialog popup kustom
-bukaModalKustom(fullText);
+// Langkah 2: Browser/WebView jadul, langsung eksekusi deep link intents
+bukaAplikasiIntentsLangsung(teksDisiapkanUntukShare);
 }
 }
 
-let teksDisiapkanUntukShare = "";
+function bukaAplikasiIntentsLangsung(teksLengkap) {
+const textEncoded = encodeURIComponent(teksLengkap);
+// Memicu Deep Link WhatsApp (Membuka aplikasi WA langsung secara otomatis di HP)
+window.location.href = `whatsapp://send?text=${textEncoded}`;
+
+// Fallback: Jika dalam 1.2 detik halaman tidak berpindah (Berarti WA tidak terinstall), tampilkan modal kustom
+setTimeout(() => {
+document.getElementById('shareModal').style.display = "flex";
+}, 1200);
+}
 
 function bukaModalKustom(teksLengkap) {
 teksDisiapkanUntukShare = teksLengkap;
@@ -1171,25 +1181,24 @@ document.getElementById('shareModal').style.display = "none";
 
 function shareKeWA() {
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-window.open(`https://api.whatsapp.com/send?text=${textEncoded}`, '_blank');
+window.open(`whatsapp://send?text=${textEncoded}`, '_blank');
 tutupShareModal();
 }
 
 function shareKeTelegram() {
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-window.open(`https://t.me/share/url?url=&text=${textEncoded}`, '_blank');
+window.open(`tg://msg?text=${textEncoded}`, '_blank');
 tutupShareModal();
 }
 
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan Google Maps berhasil disalin!");
 }).catch(() => {
-// Metode cadangan jika Clipboard API diblok WebView lama
 const el = document.createElement('textarea');
 el.value = googleMapsLink;
 document.body.appendChild(el);
