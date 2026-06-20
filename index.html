@@ -1028,9 +1028,16 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 document.getElementById('btn-maps-start').onclick = function() {
-// MODIFIKASI: Menggunakan Universal Deep-Link Directions API resmi milik Google Maps agar memicu pembukaan aplikasi maps di perangkat mobile
-const intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
-window.open(intentGoogleMaps, '_blank');
+// DIUBAH: Menggunakan format geo URI atau navIntent murni untuk memicu bypass dialog browser di Android/iOS
+let intentGoogleMaps = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(attr.nama_titik)})`;
+if (navigator.userAgent.match(/Android/i)) {
+intentGoogleMaps = `google.navigation:q=${lat},${lng}&mode=d`;
+} else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
+intentGoogleMaps = `comgooglemaps://?daddr=${lat},${lng}&directionsmode=driving`;
+} else {
+intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+}
+window.location.href = intentGoogleMaps;
 };
 document.getElementById('bottom-attribute-panel').classList.add('active');
 });
@@ -1118,6 +1125,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
+// DIUBAH: Menggunakan tautan universal terstandardisasi agar aman saat dibagikan ke platform perpesanan
 const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
