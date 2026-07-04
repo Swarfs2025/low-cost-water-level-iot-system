@@ -1028,7 +1028,7 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 
-// INTEGRASI FITUR MULAI
+// INTEGRASI FITUR MULAI (FIXED: Menggunakan Universal HTTPS Link yang aman untuk WebView)
 document.getElementById('btn-maps-start').onclick = function() {
 if (!currentPositionUser) {
 alert("Lokasi GPS Anda belum terdeteksi. Izinkan akses GPS untuk navigasi live.");
@@ -1039,11 +1039,6 @@ prosesRuteJalanInternal(lat, lng);
 map.setView([currentPositionUser.lat, currentPositionUser.lng], 17);
 
 let intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
-if (navigator.userAgent.match(/Android/i)) {
-intentGoogleMaps = `google.navigation:q=${lat},${lng}&mode=d`;
-} else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
-intentGoogleMaps = `comgooglemaps://?daddr=${lat},${lng}&directionsmode=driving`;
-}
 setTimeout(() => { window.location.href = intentGoogleMaps; }, 500);
 };
 
