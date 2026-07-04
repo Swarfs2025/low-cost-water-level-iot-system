@@ -1179,24 +1179,24 @@ bukaModalKustom(teksDisiapkanUntukShare);
 }
 });
 } else {
-bukaModalKustom(teksDisiapkanUntilShare);
+bukaModalKustom(teksDisiapkanUntukShare);
 }
 }
 function bukaModalKustom(teksLengkap) {
 teksDisiapkanUntukShare = teksLengkap;
 document.getElementById('shareModal').style.display = "flex";
 }
-function tutupShareModal(event) {
+function tutupShareModal() {
 document.getElementById('shareModal').style.display = "none";
 }
 function shareKeWA() {
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-window.open(`https://api.whatsapp.com/send?text=${textEncoded}`, '_blank');
+window.open(`whatsapp://send?text=${textEncoded}`, '_blank');
 tutupShareModal();
 }
 function shareKeTelegram() {
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-window.open(`https://t.me/share/url?text=${textEncoded}`, '_blank');
+window.open(`tg://msg?text=${textEncoded}`, '_blank');
 tutupShareModal();
 }
 function salinTautanKeClipboard() {
