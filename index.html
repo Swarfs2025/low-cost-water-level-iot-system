@@ -873,7 +873,7 @@ let dateObj = dapatkanObjekWaktu(rawDateStr);
 if (!dateObj) return rawDateStr || "Baru Saja";
 let d = dateObj.getDate().toString().padStart(2, '0');
 let m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-y = dateObj.getFullYear();
+let y = dateObj.getFullYear();
 let j = dateObj.getHours().toString().padStart(2, '0');
 let mn = dateObj.getMinutes().toString().padStart(2, '0');
 let det = dateObj.getSeconds().toString().padStart(2, '0');
@@ -1022,7 +1022,7 @@ let tableRowHtml = `
 `;
 document.getElementById('panel-table-body').innerHTML = tableRowHtml;
 
-// INTEGRASI FITUR RUTE (Membuka rute pencarian di Google Maps dengan titik jemput lokasi live GPS user)
+// INTEGRASI FITUR RUTE (Perbaikan Sintaks Template Literal)
 document.getElementById('btn-maps-route').onclick = function() {
 isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
@@ -1035,7 +1035,7 @@ window.open(urlFallback, '_blank');
 }
 };
 
-// INTEGRASI FITUR MULAI (Menggunakan native URI Intent Scheme untuk memaksa sistem Android/iOS meluncurkan APK Google Maps secara langsung)
+// INTEGRASI FITUR MULAI (Perbaikan Sintaks Native Intent Scheme)
 document.getElementById('btn-maps-start').onclick = function() {
 if (!currentPositionUser) {
 alert("Lokasi GPS Anda belum terdeteksi. Izinkan akses GPS untuk navigasi live.");
