@@ -873,7 +873,7 @@ let dateObj = dapatkanObjekWaktu(rawDateStr);
 if (!dateObj) return rawDateStr || "Baru Saja";
 let d = dateObj.getDate().toString().padStart(2, '0');
 let m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-let y = dateObj.getFullYear();
+y = dateObj.getFullYear();
 let j = dateObj.getHours().toString().padStart(2, '0');
 let mn = dateObj.getMinutes().toString().padStart(2, '0');
 let det = dateObj.getSeconds().toString().padStart(2, '0');
@@ -1028,7 +1028,7 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 
-// INTEGRASI FITUR MULAI (FIXED: Menggunakan Universal HTTPS Link yang aman untuk WebView)
+// INTEGRASI FITUR MULAI (FIXED: Menggunakan Deep Link Intent yang memicu Aplikasi Maps Android/iOS secara Native)
 document.getElementById('btn-maps-start').onclick = function() {
 if (!currentPositionUser) {
 alert("Lokasi GPS Anda belum terdeteksi. Izinkan akses GPS untuk navigasi live.");
@@ -1038,7 +1038,8 @@ isNavigatingActive = true;
 prosesRuteJalanInternal(lat, lng);
 map.setView([currentPositionUser.lat, currentPositionUser.lng], 17);
 
-let intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+// Menggunakan Google Maps Intent Universal Direction API
+let intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&origin=${currentPositionUser.lat},${currentPositionUser.lng}&destination=${lat},${lng}&travelmode=driving`;
 setTimeout(() => { window.location.href = intentGoogleMaps; }, 500);
 };
 
@@ -1123,7 +1124,8 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+// FIXED: Link share menggunakan format standard google maps URL API
+const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1176,7 +1178,8 @@ tutupShareModal();
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+// FIXED: Format pencarian koordinat standard google maps API
+const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan Google Maps berhasil disalin!");
 }).catch(() => {
