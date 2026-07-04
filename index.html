@@ -1022,13 +1022,20 @@ let tableRowHtml = `
 `;
 document.getElementById('panel-table-body').innerHTML = tableRowHtml;
 
-// INTEGRASI FITUR RUTE
+// INTEGRASI FITUR RUTE (Membuka rute pencarian di Google Maps dengan titik jemput lokasi live GPS user)
 document.getElementById('btn-maps-route').onclick = function() {
 isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
+if (currentPositionUser) {
+let urlRuteApk = `https://www.google.com/maps/dir/?api=1&origin=${currentPositionUser.lat},${currentPositionUser.lng}&destination=${lat},${lng}&travelmode=driving`;
+window.open(urlRuteApk, '_blank');
+} else {
+let urlFallback = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+window.open(urlFallback, '_blank');
+}
 };
 
-// INTEGRASI FITUR MULAI (FIXED: Memperbaiki format string template literal URL koordinat & membelokkannya melalui window.open agar didukung WebView)
+// INTEGRASI FITUR MULAI (Menggunakan native URI Intent Scheme untuk memaksa sistem Android/iOS meluncurkan APK Google Maps secara langsung)
 document.getElementById('btn-maps-start').onclick = function() {
 if (!currentPositionUser) {
 alert("Lokasi GPS Anda belum terdeteksi. Izinkan akses GPS untuk navigasi live.");
@@ -1038,9 +1045,8 @@ isNavigatingActive = true;
 prosesRuteJalanInternal(lat, lng);
 map.setView([currentPositionUser.lat, currentPositionUser.lng], 17);
 
-// Menggunakan URL Google Maps standard web API (Universal Maps Link)
-let intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&origin=${currentPositionUser.lat},${currentPositionUser.lng}&destination=${lat},${lng}&travelmode=driving`;
-setTimeout(() => { window.open(intentGoogleMaps, '_blank'); }, 500);
+let intentGoogleMaps = `google.navigation:q=${lat},${lng}&mode=d`;
+setTimeout(() => { window.location.href = intentGoogleMaps; }, 100);
 };
 
 document.getElementById('bottom-attribute-panel').classList.add('active');
@@ -1124,7 +1130,6 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// FIXED: Format link share menggunakan API resmi web agar tidak error di aplikasi wrapper/messenger
 const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
@@ -1178,7 +1183,6 @@ tutupShareModal();
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// FIXED: Format pencarian koordinat standard google maps API web resmi
 const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan Google Maps berhasil disalin!");
