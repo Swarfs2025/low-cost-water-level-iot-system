@@ -471,8 +471,9 @@ animation: radarPulse 1.8s infinite ease-out;
 opacity: 0.4;
 z-index: -1;
 }
+/* Membatalkan penyembunyian total agar panel panduan arah internal Leaflet bisa kita kontrol dinamis */
 .leaflet-routing-container {
-display: none !important;
+display: none;
 }
 .leaflet-overlay-pane svg path {
 stroke: #1a73e8 !important;
@@ -1022,20 +1023,13 @@ let tableRowHtml = `
 `;
 document.getElementById('panel-table-body').innerHTML = tableRowHtml;
 
-// INTEGRASI FITUR RUTE (Perbaikan Sintaks Template Literal)
+// TOMBOL RUTE: Menggambar rute internal WebGIS tanpa berpindah tab
 document.getElementById('btn-maps-route').onclick = function() {
 isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
-if (currentPositionUser) {
-let urlRuteApk = `https://www.google.com/maps/dir/?api=1&origin=${currentPositionUser.lat},${currentPositionUser.lng}&destination=${lat},${lng}&travelmode=driving`;
-window.open(urlRuteApk, '_blank');
-} else {
-let urlFallback = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-window.open(urlFallback, '_blank');
-}
 };
 
-// INTEGRASI FITUR MULAI (Perbaikan Sintaks Native Intent Scheme)
+// TOMBOL MULAI: Navigasi Live Mandiri & Membuka Petunjuk Arah Tertulis di Dalam Peta
 document.getElementById('btn-maps-start').onclick = function() {
 if (!currentPositionUser) {
 alert("Lokasi GPS Anda belum terdeteksi. Izinkan akses GPS untuk navigasi live.");
@@ -1043,10 +1037,7 @@ return;
 }
 isNavigatingActive = true;
 prosesRuteJalanInternal(lat, lng);
-map.setView([currentPositionUser.lat, currentPositionUser.lng], 17);
-
-let intentGoogleMaps = `google.navigation:q=${lat},${lng}&mode=d`;
-setTimeout(() => { window.location.href = intentGoogleMaps; }, 100);
+map.setView([currentPositionUser.lat, currentPositionUser.lng], 18); // Zoom in meniru GPS mobil
 };
 
 document.getElementById('bottom-attribute-panel').classList.add('active');
@@ -1080,8 +1071,32 @@ L.latLng(destLat, destLng)
 router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
 fitSelectedRoutes: false,
 lineOptions: { styles: [{ color: '#1a73e8', opacity: 0.85, weight: 6 }] },
-createMarker: function() { return null; }
+createMarker: function() { return null; },
+show: isNavigatingActive // Memunculkan panel instruksi jika navigasi aktif
 }).addTo(map);
+
+// Atur style container petunjuk arah OSRM secara dinamis
+if (isNavigatingActive) {
+setTimeout(() => {
+const routingContainer = document.querySelector('.leaflet-routing-container');
+if (routingContainer) {
+routingContainer.style.setProperty('display', 'block', 'important');
+routingContainer.style.position = 'absolute';
+routingContainer.style.top = '60px';
+routingContainer.style.left = '10px';
+routingContainer.style.maxHeight = '180px';
+routingContainer.style.overflowY = 'auto';
+routingContainer.style.backgroundColor = 'rgba(255,255,255,0.95)';
+routingContainer.style.padding = '10px';
+routingContainer.style.borderRadius = '8px';
+routingContainer.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+routingContainer.style.zIndex = '1000';
+routingContainer.style.fontSize = '11px';
+routingContainer.style.width = '240px';
+}
+}, 200);
+}
+
 internalRoutingControl.on('routesfound', function(e) {
 var routes = e.routes;
 var summary = routes[0].summary;
@@ -1121,6 +1136,10 @@ if (internalRoutingControl) {
 map.removeControl(internalRoutingControl);
 internalRoutingControl = null;
 }
+const routingContainer = document.querySelector('.leaflet-routing-container');
+if (routingContainer) {
+routingContainer.style.setProperty('display', 'none', 'important');
+}
 document.getElementById('live-route-info').style.display = "none";
 isNavigatingActive = false;
 currentDestinationLat = null;
@@ -1130,7 +1149,8 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+// Perbaikan penulisan literal template backtick string yang valid
+const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1138,7 +1158,7 @@ text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
 `📊 *Status:* ${currentCloudData.status}\n` +
 `📏 *TMA:* ${currentCloudData.tinggi_muka_air} cm\n` +
 `🗺️ *Lokasi:* ${currentCloudData.estate} - ${currentCloudData.blok}\n\n` +
-`Buka rute langsung di Google Maps:\n${googleMapsLink}`
+`Buka lokasi koordinat Google Maps:\n${googleMapsLink}`
 };
 }
 function jalankanFiturShare() {
@@ -1183,9 +1203,9 @@ tutupShareModal();
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
-alert("Tautan Google Maps berhasil disalin!");
+alert("Tautan koordinat berhasil disalin!");
 }).catch(() => {
 const el = document.createElement('textarea');
 el.value = googleMapsLink;
@@ -1193,7 +1213,7 @@ document.body.appendChild(el);
 el.select();
 document.execCommand('copy');
 document.body.removeChild(el);
-alert("Tautan Google Maps berhasil disalin!");
+alert("Tautan koordinat berhasil disalin!");
 });
 tutupShareModal();
 }
