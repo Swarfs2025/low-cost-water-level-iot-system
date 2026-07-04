@@ -1149,7 +1149,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1195,14 +1195,8 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlWa = `https://wa.me/?text=${textEncoded}`;
-const link = document.createElement('a');
-link.href = urlWa;
-link.target = '_blank';
-link.rel = 'noopener noreferrer';
-document.body.appendChild(link);
-link.click();
-document.body.removeChild(link);
+const urlWa = `https://api.whatsapp.com/send?text=${textEncoded}`;
+window.location.href = urlWa;
 tutupShareModal();
 }
 function shareKeTelegram() {
@@ -1211,20 +1205,14 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlTg = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${textEncoded}`;
-const link = document.createElement('a');
-link.href = urlTg;
-link.target = '_blank';
-link.rel = 'noopener noreferrer';
-document.body.appendChild(link);
-link.click();
-document.body.removeChild(link);
+const urlTg = `https://t.me/share/url?text=${textEncoded}`;
+window.location.href = urlTg;
 tutupShareModal();
 }
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan koordinat berhasil disalin!");
 }).catch(() => {
