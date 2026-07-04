@@ -727,7 +727,7 @@ to { transform: translateY(0); }
 <button id="btn-maps-start" class="nav-btn btn-google-light">
 <i class="fa-solid fa-location-arrow icon-container-mulai"></i> Mulai
 </button>
-<button id="btn-maps-share" class="nav-btn btn-google-light" onclick="jalankanFiturShare()">
+<button id="btn-maps-share" class="nav-btn btn-google-light">
 <i class="fa-solid fa-share-nodes"></i> Bagikan
 </button>
 </div>
@@ -1211,7 +1211,7 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlTg = `https://t.me/share/url?url=${textEncoded}`;
+const urlTg = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${textEncoded}`;
 const link = document.createElement('a');
 link.href = urlTg;
 link.target = '_blank';
@@ -1305,6 +1305,7 @@ map.dragging.enable();
 // Ikat langsung event klik tombol share untuk memotong pemblokiran propagasi Leaflet
 const shareBtnEl = document.getElementById('btn-maps-share');
 if (shareBtnEl) {
+  shareBtnEl.removeAttribute('onclick'); // Hapus inline onclick agar tidak bentrok
   shareBtnEl.addEventListener('click', function(e) {
     e.stopPropagation();
     jalankanFiturShare();
