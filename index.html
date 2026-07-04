@@ -124,22 +124,26 @@ position: absolute;
 top: 0;
 right: -320px;
 width: 280px;
-height: 100vh;
-height: 100dvh;
+/* PERBAIKAN: Mengamankan max-height agar sinkron dengan viewport browser mobile saat di-rotate */
+height: 100%; 
+max-height: 100vh;
+max-height: 100dvh;
 background: rgba(255, 255, 255, 0.90);
 backdrop-filter: blur(15px) saturate(180%);
 -webkit-backdrop-filter: blur(15px) saturate(180%);
 box-shadow: -5px 0 30px rgba(0,0,0,0.25);
 z-index: 105;
-padding: 56px 12px 24px 12px; /* Ditinggikan agar konten bawah tidak mepet */
+padding: 56px 12px 24px 12px;
 box-sizing: border-box;
 transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 display: flex;
 flex-direction: column;
-justify-content: flex-start; /* Menggunakan flex-start agar saat scroll tidak berantakan */
+justify-content: flex-start;
 gap: 12px;
 border-left: 1px solid rgba(255, 255, 255, 0.3);
-overflow-y: auto; /* PERBAIKAN UTAMA: Mengaktifkan scroll vertikal saat orientasi landscape */
+/* PERBAIKAN: Memaksa scrollable di sumbu Y dan menonaktifkan X spillover */
+overflow-y: auto !important;
+overflow-x: hidden;
 -webkit-overflow-scrolling: touch;
 }
 #menu-toggle:checked ~ .menu-drawer-container {
@@ -190,7 +194,8 @@ flex-shrink: 0;
 }
 @media screen and (max-width: 600px) {
 .hamburger-label { top: 10px; right: 10px; width: 34px; height: 34px; }
-.menu-drawer-container { width: 245px; right: -275px; padding: 52px 10px 20px 10px; gap: 8px; }
+/* PERBAIKAN: Memastikan sinkronisasi max-height saat resolusi mobile */
+.menu-drawer-container { width: 245px; right: -275px; padding: 52px 10px 20px 10px; gap: 8px; height: 100%; max-height: 100vh; max-height: 100dvh; }
 #upload-panel { font-size: 11px; gap: 2px; }
 #upload-panel b { font-size: 10.5px !important; }
 #upload-panel input { padding: 3px !important; font-size: 10.5px !important; }
