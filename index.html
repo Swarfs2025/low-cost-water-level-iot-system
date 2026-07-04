@@ -1149,7 +1149,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1196,13 +1196,13 @@ tutupShareModal();
 }
 function shareKeTelegram() {
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-window.open(`https://t.me/share/url?url=${textEncoded}`, '_blank');
+window.open(`https://t.me/share/url?text=${textEncoded}`, '_blank');
 tutupShareModal();
 }
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan koordinat berhasil disalin!");
 }).catch(() => {
