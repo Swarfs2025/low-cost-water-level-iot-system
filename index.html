@@ -356,7 +356,7 @@ margin-bottom: 2px;
 }
 /* ==========================================================================
 LAYOUT GRID JENIS PETA & DETAIL PETA
-========================================================================== */
+========================================================================= */
 .basemap-grid-container, .detail-grid-container {
 display: grid;
 grid-template-columns: repeat(3, 1fr);
@@ -1028,7 +1028,7 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 
-// INTEGRASI FITUR MULAI (FIXED: Menggunakan Deep Link Intent yang memicu Aplikasi Maps Android/iOS secara Native)
+// INTEGRASI FITUR MULAI (FIXED: Memperbaiki format string template literal URL koordinat & membelokkannya melalui window.open agar didukung WebView)
 document.getElementById('btn-maps-start').onclick = function() {
 if (!currentPositionUser) {
 alert("Lokasi GPS Anda belum terdeteksi. Izinkan akses GPS untuk navigasi live.");
@@ -1038,9 +1038,9 @@ isNavigatingActive = true;
 prosesRuteJalanInternal(lat, lng);
 map.setView([currentPositionUser.lat, currentPositionUser.lng], 17);
 
-// Menggunakan Google Maps Intent Universal Direction API
+// Menggunakan URL Google Maps standard web API (Universal Maps Link)
 let intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&origin=${currentPositionUser.lat},${currentPositionUser.lng}&destination=${lat},${lng}&travelmode=driving`;
-setTimeout(() => { window.location.href = intentGoogleMaps; }, 500);
+setTimeout(() => { window.open(intentGoogleMaps, '_blank'); }, 500);
 };
 
 document.getElementById('bottom-attribute-panel').classList.add('active');
@@ -1124,7 +1124,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// FIXED: Link share menggunakan format standard google maps URL API
+// FIXED: Format link share menggunakan API resmi web agar tidak error di aplikasi wrapper/messenger
 const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
@@ -1178,7 +1178,7 @@ tutupShareModal();
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// FIXED: Format pencarian koordinat standard google maps API
+// FIXED: Format pencarian koordinat standard google maps API web resmi
 const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan Google Maps berhasil disalin!");
