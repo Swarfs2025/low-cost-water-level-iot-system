@@ -1190,13 +1190,35 @@ function tutupShareModal() {
 document.getElementById('shareModal').style.display = "none";
 }
 function shareKeWA() {
+if (!teksDisiapkanUntukShare) {
+alert("Teks belum siap!");
+return;
+}
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-window.open(`https://api.whatsapp.com/send?text=${textEncoded}`, '_blank');
+const urlWa = `https://api.whatsapp.com/send?text=${textEncoded}`;
+const link = document.createElement('a');
+link.href = urlWa;
+link.target = '_blank';
+link.rel = 'noopener noreferrer';
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
 tutupShareModal();
 }
 function shareKeTelegram() {
-const textEncoded = encodeURIComponent(teksDisiapkanUntilShare || teksDisiapkanUntukShare);
-window.open(`https://t.me/share/url?url=${textEncoded}`, '_blank');
+if (!teksDisiapkanUntukShare) {
+alert("Teks belum siap!");
+return;
+}
+const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
+const urlTg = `https://t.me/share/url?url=${textEncoded}`;
+const link = document.createElement('a');
+link.href = urlTg;
+link.target = '_blank';
+link.rel = 'noopener noreferrer';
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
 tutupShareModal();
 }
 function salinTautanKeClipboard() {
@@ -1287,6 +1309,12 @@ if (shareBtnEl) {
     e.stopPropagation();
     jalankanFiturShare();
   });
+}
+
+// Mencegah Leaflet memblokir interaksi klik di dalam modal kustom share
+const shareModalEl = document.getElementById('shareModal');
+if (shareModalEl) {
+  L.DomEvent.disableClickPropagation(shareModalEl);
 }
 }
 fetchOnlineData();
