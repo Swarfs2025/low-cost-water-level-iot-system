@@ -1034,14 +1034,14 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 document.getElementById('btn-maps-start').onclick = function() {
-/* PERBAIKAN BERHASIL: Menggunakan template literal yang benar (${lat},${lng}) tanpa tambahan karakter '0' abnormal */
-let intentGoogleMaps = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+/* PERBAIKAN: Perbaikan format string universal URL Intent skema Google Maps */
+let intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 if (navigator.userAgent.match(/Android/i)) {
 intentGoogleMaps = `google.navigation:q=${lat},${lng}&mode=d`;
 } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
 intentGoogleMaps = `comgooglemaps://?daddr=${lat},${lng}&directionsmode=driving`;
 }
-window.open(intentGoogleMaps, '_blank');
+window.location.href = intentGoogleMaps;
 };
 document.getElementById('bottom-attribute-panel').classList.add('active');
 });
@@ -1129,8 +1129,8 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-/* PERBAIKAN BERHASIL: Pembentukan link sharing Google Maps menggunakan skema standard API URL */
-const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+/* PERBAIKAN: Pembentukan link Google Maps universal yang valid menggunakan Standard Query String */
+const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1183,7 +1183,7 @@ tutupShareModal();
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan Google Maps berhasil disalin!");
 }).catch(() => {
