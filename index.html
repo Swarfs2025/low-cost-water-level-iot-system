@@ -126,20 +126,21 @@ right: -320px;
 width: 280px;
 height: 100vh;
 height: 100dvh;
-background: rgba(255, 255, 255, 0.82);
+background: rgba(255, 255, 255, 0.90);
 backdrop-filter: blur(15px) saturate(180%);
 -webkit-backdrop-filter: blur(15px) saturate(180%);
 box-shadow: -5px 0 30px rgba(0,0,0,0.25);
 z-index: 105;
-padding: 48px 12px 12px 12px;
+padding: 56px 12px 24px 12px; /* Ditinggikan agar konten bawah tidak mepet */
 box-sizing: border-box;
 transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 display: flex;
 flex-direction: column;
-justify-content: space-between;
-gap: 2px;
+justify-content: flex-start; /* Menggunakan flex-start agar saat scroll tidak berantakan */
+gap: 12px;
 border-left: 1px solid rgba(255, 255, 255, 0.3);
-overflow: hidden;
+overflow-y: auto; /* PERBAIKAN UTAMA: Mengaktifkan scroll vertikal saat orientasi landscape */
+-webkit-overflow-scrolling: touch;
 }
 #menu-toggle:checked ~ .menu-drawer-container {
 right: 0;
@@ -169,7 +170,7 @@ max-width: 100%;
 display: flex;
 flex-direction: column;
 gap: 3px;
-flex: 1;
+flex-shrink: 0; /* Mencegah elemen menciut saat di-scroll */
 min-height: 0;
 }
 #debug-panel {
@@ -189,7 +190,7 @@ flex-shrink: 0;
 }
 @media screen and (max-width: 600px) {
 .hamburger-label { top: 10px; right: 10px; width: 34px; height: 34px; }
-.menu-drawer-container { width: 245px; right: -275px; padding: 42px 10px 10px 10px; gap: 2px; }
+.menu-drawer-container { width: 245px; right: -275px; padding: 52px 10px 20px 10px; gap: 8px; }
 #upload-panel { font-size: 11px; gap: 2px; }
 #upload-panel b { font-size: 10.5px !important; }
 #upload-panel input { padding: 3px !important; font-size: 10.5px !important; }
@@ -1028,7 +1029,6 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 document.getElementById('btn-maps-start').onclick = function() {
-// DIUBAH: Menggunakan format geo URI atau navIntent murni untuk memicu bypass dialog browser di Android/iOS
 let intentGoogleMaps = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(attr.nama_titik)})`;
 if (navigator.userAgent.match(/Android/i)) {
 intentGoogleMaps = `google.navigation:q=${lat},${lng}&mode=d`;
@@ -1125,7 +1125,6 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// DIUBAH: Menggunakan tautan universal terstandardisasi agar aman saat dibagikan ke platform perpesanan
 const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
