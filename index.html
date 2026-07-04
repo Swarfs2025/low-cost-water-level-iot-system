@@ -1034,13 +1034,12 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 document.getElementById('btn-maps-start').onclick = function() {
-let intentGoogleMaps = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(attr.nama_titik)})`;
+/* PERBAIKAN: Format String Interpolasi Tautan Google Maps Desktop & Mobile */
+let intentGoogleMaps = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 if (navigator.userAgent.match(/Android/i)) {
 intentGoogleMaps = `google.navigation:q=${lat},${lng}&mode=d`;
 } else if (navigator.userAgent.match(/iPhone|iPad|iPod/i)) {
 intentGoogleMaps = `comgooglemaps://?daddr=${lat},${lng}&directionsmode=driving`;
-} else {
-intentGoogleMaps = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
 }
 window.location.href = intentGoogleMaps;
 };
@@ -1130,7 +1129,8 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+/* PERBAIKAN: Perbaikan pembentukan URL Google Maps universal agar link yang dibagikan aktif */
+const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1172,18 +1172,18 @@ document.getElementById('shareModal').style.display = "none";
 }
 function shareKeWA() {
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-window.open(`whatsapp://send?text=${textEncoded}`, '_blank');
+window.open(`https://api.whatsapp.com/send?text=${textEncoded}`, '_blank');
 tutupShareModal();
 }
 function shareKeTelegram() {
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-window.open(`tg://msg?text=${textEncoded}`, '_blank');
+window.open(`https://t.me/share/url?url=${textEncoded}`, '_blank');
 tutupShareModal();
 }
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan Google Maps berhasil disalin!");
 }).catch(() => {
