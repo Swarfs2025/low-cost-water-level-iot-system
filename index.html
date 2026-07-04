@@ -286,7 +286,7 @@ background: #f9f9f9;
 }
 /* ==========================================================================
 PIL-SHAPE ACTION BAR MENJADI BIRU GOOGLE MAPS
-========================================================================== */
+========================================================================= */
 .navigation-action-bar {
 display: flex;
 flex-direction: column;
@@ -1149,8 +1149,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// Perbaikan penulisan literal template backtick string yang valid
-const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1203,7 +1202,7 @@ tutupShareModal();
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan koordinat berhasil disalin!");
 }).catch(() => {
