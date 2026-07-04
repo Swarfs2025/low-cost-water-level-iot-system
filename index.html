@@ -1205,7 +1205,7 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlTg = `https://t.me/share/url?text=${textEncoded}`;
+const urlTg = `tg://msg_url?url=&text=${textEncoded}`;
 window.location.href = urlTg;
 tutupShareModal();
 }
