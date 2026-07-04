@@ -1191,12 +1191,12 @@ document.getElementById('shareModal').style.display = "none";
 }
 function shareKeWA() {
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-window.open(`whatsapp://send?text=${textEncoded}`, '_blank');
+window.open(`https://api.whatsapp.com/send?text=${textEncoded}`, '_blank');
 tutupShareModal();
 }
 function shareKeTelegram() {
-const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-window.open(`tg://msg?text=${textEncoded}`, '_blank');
+const textEncoded = encodeURIComponent(teksDisiapkanUntilShare || teksDisiapkanUntukShare);
+window.open(`https://t.me/share/url?url=${textEncoded}`, '_blank');
 tutupShareModal();
 }
 function salinTautanKeClipboard() {
@@ -1279,6 +1279,15 @@ tableScrollBox.addEventListener('touchcancel', function() {
 isMovingTable = false;
 map.dragging.enable();
 }, { passive: true });
+
+// Ikat langsung event klik tombol share untuk memotong pemblokiran propagasi Leaflet
+const shareBtnEl = document.getElementById('btn-maps-share');
+if (shareBtnEl) {
+  shareBtnEl.addEventListener('click', function(e) {
+    e.stopPropagation();
+    jalankanFiturShare();
+  });
+}
 }
 fetchOnlineData();
 setInterval(fetchOnlineData, 10000);
