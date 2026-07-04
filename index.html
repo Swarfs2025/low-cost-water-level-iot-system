@@ -346,7 +346,7 @@ transform: translateY(0);
 .live-route-info-box {
 display: none;
 padding: 4px 10px;
-background-color: rgba(26, 115, 232, 0.08);
+background-color: rgba(26, 115, 232, 0.06);
 border-left: 4px solid #1a73e8;
 border-radius: 4px;
 font-size: 11px;
@@ -1149,7 +1149,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1195,7 +1195,7 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlWa = `https://api.whatsapp.com/send?text=${textEncoded}`;
+const urlWa = `https://wa.me/?text=${textEncoded}`;
 const link = document.createElement('a');
 link.href = urlWa;
 link.target = '_blank';
@@ -1224,7 +1224,7 @@ tutupShareModal();
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan koordinat berhasil disalin!");
 }).catch(() => {
