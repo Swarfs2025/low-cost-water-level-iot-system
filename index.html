@@ -1152,7 +1152,8 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+// PERBAIKAN: Menggunakan URL koordinat Google Maps standar & penulisan variabel ${lat} yang valid
+const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1197,9 +1198,10 @@ if (!teksDisiapkanUntukShare) {
 alert("Teks belum siap!");
 return;
 }
+// PERBAIKAN: Menggunakan format wa.me agar langsung masuk ke halaman pilih chat/kontak
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlWa = `https://api.whatsapp.com/send?text=${textEncoded}`;
-window.location.href = urlWa;
+const urlWa = `https://wa.me/?text=${textEncoded}`;
+window.open(urlWa, '_blank');
 tutupShareModal();
 }
 function shareKeTelegram() {
@@ -1207,15 +1209,17 @@ if (!teksDisiapkanUntukShare) {
 alert("Teks belum siap!");
 return;
 }
+// PERBAIKAN: Menghapus parameter url= kosong agar parameter teks dibaca utuh
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlTg = `https://t.me/share/url?url=&text=${textEncoded}`;
+const urlTg = `https://t.me/share/url?text=${textEncoded}`;
 window.open(urlTg, '_blank');
 tutupShareModal();
 }
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+// PERBAIKAN: Menyesuaikan tautan salin agar sinkron dengan format google maps resmi
+const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 if (navigator.clipboard && navigator.clipboard.writeText) {
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan koordinat berhasil disalin!");
