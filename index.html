@@ -471,7 +471,6 @@ animation: radarPulse 1.8s infinite ease-out;
 opacity: 0.4;
 z-index: -1;
 }
-/* Membatalkan penyembunyian total agar panel panduan arah internal Leaflet bisa kita kontrol dinamis */
 .leaflet-routing-container {
 display: none;
 }
@@ -791,6 +790,8 @@ let internalRoutingControl = null;
 let currentDestinationLat = null;
 let currentDestinationLng = null;
 let isNavigatingActive = false;
+let dataRefreshInterval = null;
+
 var googleDefault = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
 attribution: '© Google Maps Streets'
 }).addTo(map);
@@ -810,6 +811,7 @@ map.createPane('userGpsPane');
 map.getPane('userGpsPane').style.zIndex = 650;
 map.getPane('userGpsPane').style.pointerEvents = 'none';
 var userLocationLayer = L.layerGroup([], { pane: 'userGpsPane' }).addTo(map);
+
 function changeBaseMap(layerKey) {
 for (let key in baseLayers) {
 if (map.hasLayer(baseLayers[key])) {
@@ -892,6 +894,10 @@ script.onerror = function() {
 const debugDiv = document.getElementById('debug-text');
 if (debugDiv) {
 debugDiv.innerHTML = "<span style='color:red;'>Gagal memuat data online! Periksa setelan Publikasi Google Sheet Anda.</span>";
+}
+if (dataRefreshInterval) {
+clearInterval(dataRefreshInterval);
+dataRefreshInterval = null;
 }
 };
 document.body.appendChild(script);
@@ -1023,13 +1029,11 @@ let tableRowHtml = `
 `;
 document.getElementById('panel-table-body').innerHTML = tableRowHtml;
 
-// TOMBOL RUTE: Menggambar rute internal WebGIS tanpa berpindah tab
 document.getElementById('btn-maps-route').onclick = function() {
 isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 
-// TOMBOL MULAI: Navigasi Live Mandiri & Membuka Petunjuk Arah Tertulis di Dalam Peta
 document.getElementById('btn-maps-start').onclick = function() {
 if (!currentPositionUser) {
 alert("Lokasi GPS Anda belum terdeteksi. Izinkan akses GPS untuk navigasi live.");
@@ -1037,7 +1041,7 @@ return;
 }
 isNavigatingActive = true;
 prosesRuteJalanInternal(lat, lng);
-map.setView([currentPositionUser.lat, currentPositionUser.lng], 18); // Zoom in meniru GPS mobil
+map.setView([currentPositionUser.lat, currentPositionUser.lng], 18);
 };
 
 document.getElementById('bottom-attribute-panel').classList.add('active');
@@ -1072,10 +1076,9 @@ router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1
 fitSelectedRoutes: false,
 lineOptions: { styles: [{ color: '#1a73e8', opacity: 0.85, weight: 6 }] },
 createMarker: function() { return null; },
-show: isNavigatingActive // Memunculkan panel instruksi jika navigasi aktif
+show: isNavigatingActive
 }).addTo(map);
 
-// Atur style container petunjuk arah OSRM secara dinamis
 if (isNavigatingActive) {
 setTimeout(() => {
 const routingContainer = document.querySelector('.leaflet-routing-container');
@@ -1205,7 +1208,7 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlTg = `tg://msg_url?url=&text=${textEncoded}`;
+const urlTg = `https://t.me/share/url?url=&text=${textEncoded}`;
 window.open(urlTg, '_blank');
 tutupShareModal();
 }
@@ -1213,18 +1216,32 @@ function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
 const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+if (navigator.clipboard && navigator.clipboard.writeText) {
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan koordinat berhasil disalin!");
 }).catch(() => {
+salinTautanManualFallback(googleMapsLink);
+});
+} else {
+salinTautanManualFallback(googleMapsLink);
+}
+tutupShareModal();
+}
+function salinTautanManualFallback(tautan) {
 const el = document.createElement('textarea');
-el.value = googleMapsLink;
+el.value = tautan;
+el.setAttribute('readonly', '');
+el.style.position = 'absolute';
+el.style.left = '-9999px';
 document.body.appendChild(el);
 el.select();
+try {
 document.execCommand('copy');
-document.body.removeChild(el);
 alert("Tautan koordinat berhasil disalin!");
-});
-tutupShareModal();
+} catch (err) {
+alert("Gagal menyalin otomatis. Silakan salin tautan berikut manual:\n" + tautan);
+}
+document.body.removeChild(el);
 }
 function tutupPanelAtribut() {
 document.getElementById('bottom-attribute-panel').classList.remove('active');
@@ -1290,24 +1307,22 @@ isMovingTable = false;
 map.dragging.enable();
 }, { passive: true });
 
-// Ikat langsung event klik tombol share untuk memotong pemblokiran propagasi Leaflet
 const shareBtnEl = document.getElementById('btn-maps-share');
 if (shareBtnEl) {
-  shareBtnEl.removeAttribute('onclick'); // Hapus inline onclick agar tidak bentrok
+  shareBtnEl.removeAttribute('onclick');
   shareBtnEl.addEventListener('click', function(e) {
     e.stopPropagation();
     jalankanFiturShare();
   });
 }
 
-// Mencegah Leaflet memblokir interaksi klik di dalam modal kustom share
 const shareModalEl = document.getElementById('shareModal');
 if (shareModalEl) {
   L.DomEvent.disableClickPropagation(shareModalEl);
 }
 }
 fetchOnlineData();
-setInterval(fetchOnlineData, 10000);
+dataRefreshInterval = setInterval(fetchOnlineData, 10000);
 </script>
 </body>
 </html>
