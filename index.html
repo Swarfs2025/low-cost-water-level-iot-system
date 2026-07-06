@@ -859,16 +859,13 @@ function showToast(pesan, isSuccess = true) {
     toast.id = 'app-toast';
     toast.className = 'custom-toast';
     
-    // Konfigurasi ikon kustom sesuai permintaan
     const icon = isSuccess ? '✔️' : '⚠️';
     toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${pesan}</span>`;
     
     document.body.appendChild(toast);
 
-    // Memicu transisi animasi masuk smoothly
     setTimeout(() => toast.classList.add('show'), 50);
 
-    // Menghilang otomatis setelah 2.5 detik (rentang 2-3 detik) tanpa interupsi
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
@@ -1222,10 +1219,8 @@ function rakitTeksShare() {
     const lat = parseToValidCoord(currentCloudData.latitude, false);
     const lng = parseToValidCoord(currentCloudData.longitude, true);
     
-    // Perbaikan skema URL koordinat navigasi Google Maps
     const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
     
-    // Logika penentuan tampilan status berdasarkan data real-time
     let statusStr = (currentCloudData.status || "").toString().toUpperCase();
     let statusTeksPesan = "OFFLINE"; 
     
@@ -1238,7 +1233,6 @@ function rakitTeksShare() {
     }
     if (statusStr.includes("OFFLINE")) { statusAlatOffline = true; }
 
-    // Evaluasi status ke emoji jika online
     if (!statusAlatOffline) {
         if (statusStr.includes("AMAN")) {
             statusTeksPesan = "✅ AMAN";
@@ -1251,21 +1245,20 @@ function rakitTeksShare() {
         }
     }
 
-    // Fungsi dinamis pembantu untuk memaksa panjang karakter agar rata (Justify/Align)
     function padRight(teks, totalLebar) {
         let str = teks.toString();
         return str + ' '.repeat(Math.max(0, totalLebar - str.length));
     }
 
-    // Mengunci lebar label di angka 16 karakter agar posisi titik dua (:) sejajar vertikal
+    // Mengubah jeda baris \n\n setelah baris "Blok" menjadi \n agar "Created At" rapat tanpa spasi blok
     let teksPesan = `LCWL 2.0 | LOW COST WATER LEVEL\n\n` +
                     `📍 *Informasi Lokasi*\n` +
                     `\`${padRight("Nama Titik", 16)}: ${currentCloudData.nama_titik}\`\n` +
                     `\`${padRight("Status", 16)}: ${statusTeksPesan}\`\n` +
                     `\`${padRight("Tinggi Muka Air", 16)}: ${currentCloudData.tinggi_muka_air} cm\`\n` +
                     `\`${padRight("Estate", 16)}: ${currentCloudData.estate}\`\n` +
-                    `\`${padRight("Blok", 16)}: ${currentCloudData.blok}\`\n\n` +
-                    `\`${padRight("Created At", 16)}: ${currentCloudData.created_at}\`\n` +
+                    `\`${padRight("Blok", 16)}: ${currentCloudData.blok}\`\n` +
+                    `\`${padRight("Created At", 16)}: ${currentCloudData.created_at}\`\n\n` +
                     `📌 *Koordinat GPS*\n` +
                     `\`${padRight("Latitude", 16)}: ${lat}\`\n` +
                     `\`${padRight("Longitude", 16)}: ${lng}\`\n\n` +
