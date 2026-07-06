@@ -1227,7 +1227,7 @@ function rakitTeksShare() {
     
     // Logika penentuan tampilan status berdasarkan data real-time
     let statusStr = (currentCloudData.status || "").toString().toUpperCase();
-    let statusTeksPesan = "OFFLINE"; // Default jika offline
+    let statusTeksPesan = "OFFLINE"; 
     
     let statusAlatOffline = false;
     let waktuSistemSekarang = new Date();
@@ -1251,17 +1251,23 @@ function rakitTeksShare() {
         }
     }
 
-    // Membungkus baris parameter dengan backtick (`) untuk memaksa font Monospace/Fixed-width di WA & Telegram
+    // Fungsi dinamis pembantu untuk memaksa panjang karakter agar rata (Justify/Align)
+    function padRight(teks, totalLebar) {
+        let str = teks.toString();
+        return str + ' '.repeat(Math.max(0, totalLebar - str.length));
+    }
+
+    // Mengunci lebar label di angka 16 karakter agar posisi titik dua (:) sejajar vertikal
     let teksPesan = `LCWL 2.0 | LOW COST WATER LEVEL\n\n` +
                     `📍 *Informasi Lokasi*\n` +
-                    `\`Nama Titik      : ${currentCloudData.nama_titik}\`\n` +
-                    `\`Status          : ${statusTeksPesan}\`\n` +
-                    `\`Tinggi Muka Air : ${currentCloudData.tinggi_muka_air} cm\`\n` +
-                    `\`Estate          : ${currentCloudData.estate}\`\n` +
-                    `\`Blok            : ${currentCloudData.blok}\`\n\n` +
+                    `\`${padRight("Nama Titik", 16)}: ${currentCloudData.nama_titik}\`\n` +
+                    `\`${padRight("Status", 16)}: ${statusTeksPesan}\`\n` +
+                    `\`${padRight("Tinggi Muka Air", 16)}: ${currentCloudData.tinggi_muka_air} cm\`\n` +
+                    `\`${padRight("Estate", 16)}: ${currentCloudData.estate}\`\n` +
+                    `\`${padRight("Blok", 16)}: ${currentCloudData.blok}\`\n\n` +
                     `📌 *Koordinat GPS*\n` +
-                    `\`Latitude        : ${lat}\`\n` +
-                    `\`Longitude       : ${lng}\`\n\n` +
+                    `\`${padRight("Latitude", 16)}: ${lat}\`\n` +
+                    `\`${padRight("Longitude", 16)}: ${lng}\`\n\n` +
                     `🌐 *Google Maps*\n` +
                     `${googleMapsLink}\n\n` +
                     `Pesan ini dibuat secara otomatis oleh LCWL 2.0.`;
