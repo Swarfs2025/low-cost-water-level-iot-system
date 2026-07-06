@@ -1157,7 +1157,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1222,23 +1222,28 @@ return;
 if (window.AppInventor) {
 window.AppInventor.setWebViewString("TG:" + teksDisiapkanUntukShare);
 } else {
-const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
+const textEncoded = encodeURIComponent(teksDisURIComponent(teksDisiapkanUntukShare));
 window.location.href = `https://telegram.me/share/url?text=${textEncoded}`;
 }
 document.getElementById('shareModal').style.display = "none";
 }
 function salinTautanKeClipboard() {
-const lat = parseToValidCoord(currentCloudData.latitude, false);
-const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+if (!teksDisiapkanUntukShare) {
+if (currentCloudData) {
+teksDisiapkanUntukShare = rakitTeksShare().text;
+} else {
+alert("Data belum siap!");
+return;
+}
+}
 if (navigator.clipboard && navigator.clipboard.writeText) {
-navigator.clipboard.writeText(googleMapsLink).then(() => {
-alert("Tautan koordinat berhasil disalin!");
+navigator.clipboard.writeText(teksDisiapkanUntukShare).then(() => {
+alert("Tautan & Koordinat lengkap berhasil disalin! Siap ditempel ke WhatsApp/Telegram.");
 }).catch(() => {
-salinTautanManualFallback(googleMapsLink);
+salinTautanManualFallback(teksDisiapkanUntukShare);
 });
 } else {
-salinTautanManualFallback(googleMapsLink);
+salinTautanManualFallback(teksDisiapkanUntukShare);
 }
 document.getElementById('shareModal').style.display = "none";
 }
@@ -1252,7 +1257,7 @@ document.body.appendChild(el);
 el.select();
 try {
 document.execCommand('copy');
-alert("Tautan koordinat berhasil disalin!");
+alert("Tautan & Koordinat lengkap berhasil disalin!");
 } catch (err) {
 alert("Gagal menyalin otomatis. Silakan salin tautan berikut manual:\n" + tautan);
 }
