@@ -1152,7 +1152,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// PERBAIKAN: Memperbaiki sintaks string literal & mengubah tautan ke format URL resmi Google Maps
+// PERBAIKAN: Memperbaiki sintaks string literal (backticks) & format tautan resmi Google Maps
 const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
@@ -1190,7 +1190,7 @@ function bukaModalKustom(teksLengkap) {
 teksDisiapkanUntukShare = teksLengkap;
 document.getElementById('shareModal').style.display = "flex";
 }
-// PERBAIKAN: Menambahkan parameter event untuk menyeleksi klik di area luar kontainer saja
+// PERBAIKAN: Seleksi target klik area background luar kontainer modal agar tidak menutup paksa saat diklik di dalam kontainer
 function tutupShareModal(event) {
 if (!event || event.target === document.getElementById('shareModal')) {
 document.getElementById('shareModal').style.display = "none";
@@ -1201,7 +1201,7 @@ if (!teksDisiapkanUntukShare) {
 alert("Teks belum siap!");
 return;
 }
-// PERBAIKAN: Menggunakan endpoint resmi api.whatsapp.com yang kompatibel global
+// PERBAIKAN: Menggunakan endpoint resmi api.whatsapp.com yang stabil dan kompatibel global
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
 const urlWa = `https://api.whatsapp.com/send?text=${textEncoded}`;
 window.open(urlWa, '_blank');
@@ -1212,7 +1212,7 @@ if (!teksDisiapkanUntukShare) {
 alert("Teks belum siap!");
 return;
 }
-// PERBAIKAN: Menyesuaikan parameter Telegram URL Share agar teks terbaca utuh
+// PERBAIKAN: Menyesuaikan parameter teks Telegram agar dibaca utuh sebagai isi pesan
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
 const urlTg = `https://t.me/share/url?url=${textEncoded}`;
 window.open(urlTg, '_blank');
@@ -1221,7 +1221,7 @@ document.getElementById('shareModal').style.display = "none";
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// PERBAIKAN: Tautan diselaraskan dengan fungsi pembagian maps utama
+// PERBAIKAN: Tautan diselaraskan ke format koordinat maps standar
 const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 if (navigator.clipboard && navigator.clipboard.writeText) {
 navigator.clipboard.writeText(googleMapsLink).then(() => {
@@ -1314,6 +1314,7 @@ isMovingTable = false;
 map.dragging.enable();
 }, { passive: true });
 
+// PERBAIKAN: Mengaktifkan fungsionalitas klik tombol Share
 const shareBtnEl = document.getElementById('btn-maps-share');
 if (shareBtnEl) {
   shareBtnEl.removeAttribute('onclick');
