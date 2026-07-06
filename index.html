@@ -1006,7 +1006,6 @@ iconAnchor: [8, 8]
 });
 var liveMarker = L.marker([lat, lng], { icon: radarIcon }).addTo(markerGroup);
 liveMarker.on('click', function() {
-// TRIGGER PUSHSTATE SAAT PANEL DIBUKA
 pushNewNavigationState();
 
 document.getElementById('panel-device-title').innerText = `Detail Atribut: ${attr.nama_titik}`;
@@ -1071,7 +1070,6 @@ bersihkanRuteInternal();
 currentDestinationLat = destLat;
 currentDestinationLng = destLng;
 
-// PUSH STATE JIKA SEBELUMNYA BELUM ADA PANEL YANG TERBUKA
 pushNewNavigationState();
 
 internalRoutingControl = L.Routing.control({
@@ -1159,7 +1157,6 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// FIX: Memperbaiki kesalahan penulisan interpolasi string literal `3{lat}` menjadi `${lat}` dan mengubah skema http://googleusercontent... menjadi peta standar google maps hlm web.
 const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
@@ -1178,7 +1175,6 @@ return;
 }
 const shareData = rakitTeksShare();
 teksDisiapkanUntukShare = shareData.text;
-// TRIGGER PUSHSTATE SAAT MODAL SHARE DIBUKA
 pushNewNavigationState();
 
 if (navigator.share) {
@@ -1211,7 +1207,6 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-// FIX: Menggunakan protokol skema aplikasi native 'whatsapp://' agar memicu pembukaan aplikasi langsung di Android WebView MIT App Inventor
 const urlWa = `whatsapp://send?text=${textEncoded}`;
 window.location.href = urlWa;
 document.getElementById('shareModal').style.display = "none";
@@ -1222,7 +1217,6 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-// FIX: Menggunakan protokol skema aplikasi native 'tg://' agar memicu pembukaan aplikasi langsung di Android WebView MIT App Inventor
 const urlTg = `tg://msg_url?url=&text=${textEncoded}`;
 window.location.href = urlTg;
 document.getElementById('shareModal').style.display = "none";
@@ -1338,7 +1332,6 @@ if (shareModalEl) {
   L.DomEvent.disableClickPropagation(shareModalEl);
 }
 
-// TRIGGER PUSHSTATE SAAT HAMBURGER MENU DIBUKA
 document.getElementById('menu-toggle').addEventListener('change', function() {
   if (this.checked) {
     pushNewNavigationState();
@@ -1354,7 +1347,6 @@ function pushNewNavigationState() {
   }
 }
 
-// Inisialisasi awal agar stack history mengenali root base page semenjak aplikasi dimuat
 if (!window.history.state) {
   window.history.replaceState({ page: 'root' }, '');
 }
@@ -1366,23 +1358,19 @@ window.addEventListener('popstate', function(event) {
 
   let adaAktivitasUI = false;
 
-  // 1. Cek apakah Modal Share sedang terbuka
   if (shareModal && shareModal.style.display === "flex") {
     shareModal.style.display = "none";
     adaAktivitasUI = true;
   }
-  // 2. Cek apakah Hamburger Menu Drawer sedang terbuka
   else if (menuToggle && menuToggle.checked) {
     menuToggle.checked = false;
     adaAktivitasUI = true;
   }
-  // 3. Cek apakah Panel Informasi Bawah / Rute aktif sedang terbuka
   else if (bottomPanel && bottomPanel.classList.contains('active')) {
     tutupPanelAtribut();
     adaAktivitasUI = true;
   }
 
-  // Jika ada UI yang ditutup lewat tombol back, kunci kembali state agar back selanjutnya tidak langsung keluar
   if (adaAktivitasUI) {
     window.history.pushState({ page: 'panel-active' }, '');
   }
