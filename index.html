@@ -727,7 +727,7 @@ to { transform: translateY(0); }
 <i class="fa-solid fa-location-arrow icon-container-mulai"></i> Mulai
 </button>
 <button id="btn-maps-share" class="nav-btn btn-google-light">
-<i class="fa-solid fa-share-nodes"></i> Bagikan
+<i class="fa-solid fa-link"></i> Salin Tautan
 </button>
 </div>
 </div>
@@ -1334,7 +1334,8 @@ if (shareBtnEl) {
   shareBtnEl.removeAttribute('onclick');
   shareBtnEl.addEventListener('click', function(e) {
     e.stopPropagation();
-    jalankanFiturShare();
+    // Langsung menjalankan fungsi salin ke clipboard sekali klik tanpa memunculkan modal bagikan
+    salinTautanKeClipboard();
   });
 }
 
