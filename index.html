@@ -1219,7 +1219,6 @@ function rakitTeksShare() {
     const lat = parseToValidCoord(currentCloudData.latitude, false);
     const lng = parseToValidCoord(currentCloudData.longitude, true);
     
-    // PERBAIKAN: Memperbaiki kesalahan penulisan URL peta bawaan Anda
     const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
     
     let statusStr = (currentCloudData.status || "").toString().toUpperCase();
@@ -1251,10 +1250,8 @@ function rakitTeksShare() {
         return str + ' '.repeat(Math.max(0, totalLebar - str.length));
     }
 
-    // PERBAIKAN: Mengubah "LCWL 2.0 | LOW COST WATER LEVEL" menjadi teks Bold menggunakan simbol (*) 
-    // dan mensimulasikan warna Biru (menggunakan kombinasi link teks fiktif yang akan diwarnai biru secara otomatis oleh WhatsApp/Telegram)
-    let teksPesan = `*[LCWL 2.0 | LOW COST WATER LEVEL]*\n` +
-                    `_Membuka Tautan Panel Monitoring_ 🌐\n\n` +
+    // Mengubah jeda baris \n\n setelah baris "Blok" menjadi \n agar "Created At" rapat tanpa spasi blok
+    let teksPesan = `LCWL 2.0 | LOW COST WATER LEVEL\n\n` +
                     `📍 *Informasi Lokasi*\n` +
                     `\`${padRight("Nama Titik", 16)}: ${currentCloudData.nama_titik}\`\n` +
                     `\`${padRight("Status", 16)}: ${statusTeksPesan}\`\n` +
@@ -1351,7 +1348,7 @@ showToast("Tautan dan koordinat berhasil disalin ke clipboard.", true);
 salinTautanManualFallback(teksDisiapkanUntukShare);
 });
 } else {
-salinTautanManualFallback(teksDisiapkanUntilShare);
+salinTautanManualFallback(teksDisiapkanUntukShare);
 }
 document.getElementById('shareModal').style.display = "none";
 }
@@ -1444,7 +1441,7 @@ if (shareBtnEl) {
   shareBtnEl.removeAttribute('onclick');
   shareBtnEl.addEventListener('click', function(e) {
     e.stopPropagation();
-    jalankanFiturShare();
+    salinTautanKeClipboard();
   });
 }
 
