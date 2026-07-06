@@ -1152,7 +1152,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// PERBAIKAN: Menggunakan URL koordinat Google Maps standar & penulisan variabel ${lat} yang valid
+// PERBAIKAN: Memperbaiki sintaks string literal & mengubah tautan ke format URL resmi Google Maps
 const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
@@ -1190,35 +1190,38 @@ function bukaModalKustom(teksLengkap) {
 teksDisiapkanUntukShare = teksLengkap;
 document.getElementById('shareModal').style.display = "flex";
 }
-function tutupShareModal() {
+// PERBAIKAN: Menambahkan parameter event untuk menyeleksi klik di area luar kontainer saja
+function tutupShareModal(event) {
+if (!event || event.target === document.getElementById('shareModal')) {
 document.getElementById('shareModal').style.display = "none";
+}
 }
 function shareKeWA() {
 if (!teksDisiapkanUntukShare) {
 alert("Teks belum siap!");
 return;
 }
-// PERBAIKAN: Menggunakan format wa.me agar langsung masuk ke halaman pilih chat/kontak
+// PERBAIKAN: Menggunakan endpoint resmi api.whatsapp.com yang kompatibel global
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlWa = `https://wa.me/?text=${textEncoded}`;
+const urlWa = `https://api.whatsapp.com/send?text=${textEncoded}`;
 window.open(urlWa, '_blank');
-tutupShareModal();
+document.getElementById('shareModal').style.display = "none";
 }
 function shareKeTelegram() {
 if (!teksDisiapkanUntukShare) {
 alert("Teks belum siap!");
 return;
 }
-// PERBAIKAN: Menghapus parameter url= kosong agar parameter teks dibaca utuh
+// PERBAIKAN: Menyesuaikan parameter Telegram URL Share agar teks terbaca utuh
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlTg = `https://t.me/share/url?text=${textEncoded}`;
+const urlTg = `https://t.me/share/url?url=${textEncoded}`;
 window.open(urlTg, '_blank');
-tutupShareModal();
+document.getElementById('shareModal').style.display = "none";
 }
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// PERBAIKAN: Menyesuaikan tautan salin agar sinkron dengan format google maps resmi
+// PERBAIKAN: Tautan diselaraskan dengan fungsi pembagian maps utama
 const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 if (navigator.clipboard && navigator.clipboard.writeText) {
 navigator.clipboard.writeText(googleMapsLink).then(() => {
@@ -1229,7 +1232,7 @@ salinTautanManualFallback(googleMapsLink);
 } else {
 salinTautanManualFallback(googleMapsLink);
 }
-tutupShareModal();
+document.getElementById('shareModal').style.display = "none";
 }
 function salinTautanManualFallback(tautan) {
 const el = document.createElement('textarea');
