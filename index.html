@@ -1221,7 +1221,9 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
     const lat = parseToValidCoord(currentCloudData.latitude, false);
     const lng = parseToValidCoord(currentCloudData.longitude, true);
-    const googleMapsLink = `http://googleusercontent.com/maps.google.com/${lat},${lng}`;
+    
+    // Memperbaiki skema URL tautan Google Maps standar agar langsung terbaca navigasi hp
+    const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
     
     // Logika penentuan tampilan status berdasarkan data real-time
     let statusStr = (currentCloudData.status || "").toString().toUpperCase();
@@ -1236,7 +1238,7 @@ function rakitTeksShare() {
     }
     if (statusStr.includes("OFFLINE")) { statusAlatOffline = true; }
 
-    // Evaluasi status ke emoji yang diminta jika online
+    // Evaluasi status ke emoji jika online
     if (!statusAlatOffline) {
         if (statusStr.includes("AMAN")) {
             statusTeksPesan = "✅ AMAN";
@@ -1245,11 +1247,11 @@ function rakitTeksShare() {
         } else if (statusStr.includes("BAHAYA")) {
             statusTeksPesan = "❌ BAHAYA";
         } else {
-            statusTeksPesan = statusStr; // Fallback untuk teks kustom lainnya
+            statusTeksPesan = statusStr; 
         }
     }
 
-    // Susun format presisi dengan titik dua sejajar rapi
+    // Menggunakan padding spasi manual untuk perataan presisi tanda (:) vertikal
     let teksPesan = `LCWL 2.0 | LOW COST WATER LEVEL\n\n` +
                     `📍 Informasi Lokasi\n\n` +
                     `Nama Titik      : ${currentCloudData.nama_titik}\n` +
