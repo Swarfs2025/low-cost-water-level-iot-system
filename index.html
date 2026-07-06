@@ -1222,7 +1222,7 @@ function rakitTeksShare() {
     const lat = parseToValidCoord(currentCloudData.latitude, false);
     const lng = parseToValidCoord(currentCloudData.longitude, true);
     
-    // Memperbaiki skema URL tautan Google Maps standar agar langsung terbaca navigasi hp
+    // Perbaikan skema URL koordinat navigasi Google Maps
     const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
     
     // Logika penentuan tampilan status berdasarkan data real-time
@@ -1251,18 +1251,18 @@ function rakitTeksShare() {
         }
     }
 
-    // Menggunakan padding spasi manual untuk perataan presisi tanda (:) vertikal
+    // Membungkus baris parameter dengan backtick (`) untuk memaksa font Monospace/Fixed-width di WA & Telegram
     let teksPesan = `LCWL 2.0 | LOW COST WATER LEVEL\n\n` +
-                    `📍 Informasi Lokasi\n\n` +
-                    `Nama Titik      : ${currentCloudData.nama_titik}\n` +
-                    `Status          : ${statusTeksPesan}\n` +
-                    `Tinggi Muka Air : ${currentCloudData.tinggi_muka_air} cm\n` +
-                    `Estate          : ${currentCloudData.estate}\n` +
-                    `Blok            : ${currentCloudData.blok}\n\n` +
-                    `📌 Koordinat GPS\n\n` +
-                    `Latitude        : ${lat}\n` +
-                    `Longitude       : ${lng}\n\n` +
-                    `🌐 Google Maps\n\n` +
+                    `📍 *Informasi Lokasi*\n` +
+                    `\`Nama Titik      : ${currentCloudData.nama_titik}\`\n` +
+                    `\`Status          : ${statusTeksPesan}\`\n` +
+                    `\`Tinggi Muka Air : ${currentCloudData.tinggi_muka_air} cm\`\n` +
+                    `\`Estate          : ${currentCloudData.estate}\`\n` +
+                    `\`Blok            : ${currentCloudData.blok}\`\n\n` +
+                    `📌 *Koordinat GPS*\n` +
+                    `\`Latitude        : ${lat}\`\n` +
+                    `\`Longitude       : ${lng}\`\n\n` +
+                    `🌐 *Google Maps*\n` +
                     `${googleMapsLink}\n\n` +
                     `Pesan ini dibuat secara otomatis oleh LCWL 2.0.`;
 
