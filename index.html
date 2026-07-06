@@ -1159,7 +1159,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1220,14 +1220,14 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlTg = `tg://msg_url?url=&text=${textEncoded}`;
+const urlTg = `https://t.me/share/url?url=&text=${textEncoded}`;
 window.open(urlTg, '_blank');
 document.getElementById('shareModal').style.display = "none";
 }
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 if (navigator.clipboard && navigator.clipboard.writeText) {
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan koordinat berhasil disalin!");
@@ -1287,6 +1287,7 @@ map.on('locationerror', function(e) {
 const statusDebug = document.getElementById('debug-text');
 if (statusDebug) { statusDebug.innerHTML = `<span style='color:orange; font-weight:bold;'>GPS Device: ${e.message}</span>`; }
 });
+
 const panelBawahContainer = document.getElementById('bottom-attribute-panel');
 const tableScrollBox = document.getElementById('scroll-table-container');
 if (panelBawahContainer && tableScrollBox) {
@@ -1318,6 +1319,7 @@ tableScrollBox.addEventListener('touchcancel', function() {
 isMovingTable = false;
 map.dragging.enable();
 }, { passive: true });
+}
 
 const shareBtnEl = document.getElementById('btn-maps-share');
 if (shareBtnEl) {
@@ -1331,7 +1333,6 @@ if (shareBtnEl) {
 const shareModalEl = document.getElementById('shareModal');
 if (shareModalEl) {
   L.DomEvent.disableClickPropagation(shareModalEl);
-}
 }
 
 // TRIGGER PUSHSTATE SAAT HAMBURGER MENU DIBUKA
