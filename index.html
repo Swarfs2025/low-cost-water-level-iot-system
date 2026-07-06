@@ -1170,22 +1170,31 @@ text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
 `Buka lokasi koordinat Google Maps:\n${googleMapsLink}`
 };
 }
-
-// MODIFIKASI: DIPOTONG LANGSUNG MASUK KE WHATSAPP TANPA MODAL/POPUP SEPERTI HALAMAN PILIHAN KONTAK
 function jalankanFiturShare() {
-  if (!currentCloudData) {
-    alert("Data belum siap untuk dibagikan!");
-    return;
-  }
-  const shareData = rakitTeksShare();
-  teksDisiapkanUntukShare = shareData.text;
-
-  // Langsung encodifikasi teks dan oper ke WhatsApp API
-  const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-  const urlWa = `https://api.whatsapp.com/send?text=${textEncoded}`;
-  window.open(urlWa, '_blank');
+if (!currentCloudData) {
+alert("Data belum siap untuk dibagikan!");
+return;
 }
+const shareData = rakitTeksShare();
+teksDisiapkanUntukShare = shareData.text;
+// TRIGGER PUSHSTATE SAAT MODAL SHARE DIBUKA
+pushNewNavigationState();
 
+if (navigator.share) {
+navigator.share({
+title: shareData.title,
+text: teksDisiapkanUntukShare
+})
+.then(() => console.log('Berhasil memicu Native Share Sheet.'))
+.catch((err) => {
+if (err.name !== 'AbortError') {
+bukaModalKustom(teksDisiapkanUntukShare);
+}
+});
+} else {
+bukaModalKustom(teksDisiapkanUntukShare);
+}
+}
 function bukaModalKustom(teksLengkap) {
 teksDisiapkanUntukShare = teksLengkap;
 document.getElementById('shareModal').style.display = "flex";
