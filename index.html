@@ -1217,20 +1217,59 @@ currentDestinationLat = null;
 currentDestinationLng = null;
 }
 let teksDisiapkanUntukShare = "";
+
 function rakitTeksShare() {
-const lat = parseToValidCoord(currentCloudData.latitude, false);
-const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-return {
-title: `Monitoring: ${currentCloudData.nama_titik}`,
-text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
-`📍 *Titik:* ${currentCloudData.nama_titik}\n` +
-`📊 *Status:* ${currentCloudData.status}\n` +
-`📏 *TMA:* ${currentCloudData.tinggi_muka_air} cm\n` +
-`🗺️ *Lokasi:* ${currentCloudData.estate} - ${currentCloudData.blok}\n\n` +
-`Buka lokasi koordinat Google Maps:\n${googleMapsLink}`
-};
+    const lat = parseToValidCoord(currentCloudData.latitude, false);
+    const lng = parseToValidCoord(currentCloudData.longitude, true);
+    const googleMapsLink = `http://googleusercontent.com/maps.google.com/${lat},${lng}`;
+    
+    // Logika penentuan tampilan status berdasarkan data real-time
+    let statusStr = (currentCloudData.status || "").toString().toUpperCase();
+    let statusTeksPesan = "OFFLINE"; // Default jika offline
+    
+    let statusAlatOffline = false;
+    let waktuSistemSekarang = new Date();
+    let waktuDataTerakhir = dapatkanObjekWaktu(currentCloudData.created_at);
+    if (waktuDataTerakhir) {
+        let selisihWaktuJam = Math.abs(waktuSistemSekarang - waktuDataTerakhir) / (1000 * 60 * 60);
+        if (selisihWaktuJam > 1.0) { statusAlatOffline = true; }
+    }
+    if (statusStr.includes("OFFLINE")) { statusAlatOffline = true; }
+
+    // Evaluasi status ke emoji yang diminta jika online
+    if (!statusAlatOffline) {
+        if (statusStr.includes("AMAN")) {
+            statusTeksPesan = "✅ AMAN";
+        } else if (statusStr.includes("WASPADA")) {
+            statusTeksPesan = "⚠️ WASPADA";
+        } else if (statusStr.includes("BAHAYA")) {
+            statusTeksPesan = "❌ BAHAYA";
+        } else {
+            statusTeksPesan = statusStr; // Fallback untuk teks kustom lainnya
+        }
+    }
+
+    // Susun format presisi dengan titik dua sejajar rapi
+    let teksPesan = `LCWL 2.0 | LOW COST WATER LEVEL\n\n` +
+                    `📍 Informasi Lokasi\n\n` +
+                    `Nama Titik      : ${currentCloudData.nama_titik}\n` +
+                    `Status          : ${statusTeksPesan}\n` +
+                    `Tinggi Muka Air : ${currentCloudData.tinggi_muka_air} cm\n` +
+                    `Estate          : ${currentCloudData.estate}\n` +
+                    `Blok            : ${currentCloudData.blok}\n\n` +
+                    `📌 Koordinat GPS\n\n` +
+                    `Latitude        : ${lat}\n` +
+                    `Longitude       : ${lng}\n\n` +
+                    `🌐 Google Maps\n\n` +
+                    `${googleMapsLink}\n\n` +
+                    `Pesan ini dibuat secara otomatis oleh LCWL 2.0.`;
+
+    return {
+        title: `LCWL 2.0 - ${currentCloudData.nama_titik}`,
+        text: teksPesan
+    };
 }
+
 function jalankanFiturShare() {
 if (!currentCloudData) {
 showToast("Data belum siap dibagikan!", false);
