@@ -1159,7 +1159,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
 text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
@@ -1220,14 +1220,14 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlTg = `https://t.me/share/url?url=${textEncoded}`;
+const urlTg = `tg://msg_url?url=&text=${textEncoded}`;
 window.open(urlTg, '_blank');
 document.getElementById('shareModal').style.display = "none";
 }
 function salinTautanKeClipboard() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+const googleMapsLink = `https://maps.google.com/?q=${lat},${lng}`;
 if (navigator.clipboard && navigator.clipboard.writeText) {
 navigator.clipboard.writeText(googleMapsLink).then(() => {
 alert("Tautan koordinat berhasil disalin!");
@@ -1345,10 +1345,14 @@ document.getElementById('menu-toggle').addEventListener('change', function() {
 LOGIKA INTERSEPSI TOMBOL BACK BAWAHAN PONSEL (HISTORY POPSTATE)
 ========================================================================== */
 function pushNewNavigationState() {
-  // Hanya push state baru jika history saat ini belum dikunci tanda 'panel-active'
   if (!window.history.state || window.history.state.page !== 'panel-active') {
     window.history.pushState({ page: 'panel-active' }, '');
   }
+}
+
+// Inisialisasi awal agar stack history mengenali root base page semenjak aplikasi dimuat
+if (!window.history.state) {
+  window.history.replaceState({ page: 'root' }, '');
 }
 
 window.addEventListener('popstate', function(event) {
