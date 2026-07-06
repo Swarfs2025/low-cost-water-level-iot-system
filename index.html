@@ -553,6 +553,36 @@ box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 from { transform: translateY(100%); }
 to { transform: translateY(0); }
 }
+
+/* ==========================================================================
+TOAST NOTIFICATION KUSTOM CORPORATE STYLE (UNTUK SALIN TAUTAN)
+========================================================================== */
+.custom-toast {
+position: fixed;
+top: 20px;
+left: 50%;
+transform: translateX(-50%) translateY(-20px);
+background: rgba(33, 33, 33, 0.9);
+backdrop-filter: blur(8px);
+-webkit-backdrop-filter: blur(8px);
+color: #ffffff;
+padding: 10px 20px;
+border-radius: 8px;
+font-size: 12px;
+font-weight: bold;
+z-index: 999999;
+box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+opacity: 0;
+transition: opacity 0.3s ease, transform 0.3s ease;
+pointer-events: none;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+.custom-toast.show {
+opacity: 1;
+transform: translateX(-50%) translateY(0);
+}
 </style>
 </head>
 <body>
@@ -812,6 +842,25 @@ map.getPane('userGpsPane').style.zIndex = 650;
 map.getPane('userGpsPane').style.pointerEvents = 'none';
 var userLocationLayer = L.layerGroup([], { pane: 'userGpsPane' }).addTo(map);
 
+// FUNGSI UTILITAS UNTUK NOTIFIKASI TOAST MODERN
+function showToast(pesan) {
+    const oldToast = document.getElementById('app-toast');
+    if (oldToast) oldToast.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'app-toast';
+    toast.className = 'custom-toast';
+    toast.innerHTML = `<i class="fa-solid fa-circle-check" style="color: #25D366;"></i> ${pesan}`;
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.classList.add('show'), 50);
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 function changeBaseMap(layerKey) {
 for (let key in baseLayers) {
 if (map.hasLayer(baseLayers[key])) {
@@ -1038,7 +1087,7 @@ prosesRuteJalanInternal(lat, lng);
 
 document.getElementById('btn-maps-start').onclick = function() {
 if (!currentPositionUser) {
-alert("Lokasi GPS Anda belum terdeteksi. Izinkan akses GPS untuk navigasi live.");
+showToast("⚠️ GPS belum terdeteksi. Izinkan akses lokasi.");
 return;
 }
 isNavigatingActive = true;
@@ -1063,7 +1112,7 @@ if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><sp
 }
 function prosesRuteJalanInternal(destLat, destLng) {
 if (!currentPositionUser) {
-alert("Lokasi GPS Anda belum terkunci! Pastikan izin lokasi browser Anda aktif.");
+showToast("⚠️ Lokasi GPS Anda belum terkunci!");
 return;
 }
 bersihkanRuteInternal();
@@ -1170,7 +1219,7 @@ text: `🚨 *MONITORING SMART WATER LEVEL* 🚨\n\n` +
 }
 function jalankanFiturShare() {
 if (!currentCloudData) {
-alert("Data belum siap untuk dibagikan!");
+showToast("⚠️ Data belum siap dibagikan!");
 return;
 }
 const shareData = rakitTeksShare();
@@ -1203,7 +1252,7 @@ document.getElementById('shareModal').style.display = "none";
 }
 function shareKeWA() {
 if (!teksDisiapkanUntukShare) {
-alert("Teks belum siap!");
+showToast("⚠️ Teks belum siap!");
 return;
 }
 if (window.AppInventor) {
@@ -1216,29 +1265,31 @@ document.getElementById('shareModal').style.display = "none";
 }
 function shareKeTelegram() {
 if (!teksDisiapkanUntukShare) {
-alert("Teks belum siap!");
+showToast("⚠️ Teks belum siap!");
 return;
 }
 if (window.AppInventor) {
 window.AppInventor.setWebViewString("TG:" + teksDisiapkanUntukShare);
 } else {
-const textEncoded = encodeURIComponent(teksDisURIComponent(teksDisiapkanUntukShare));
+const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
 window.location.href = `https://telegram.me/share/url?text=${textEncoded}`;
 }
 document.getElementById('shareModal').style.display = "none";
 }
+
+// PERBAIKAN: Fungsi salin dengan pesan formal tanpa alert dialog browser
 function salinTautanKeClipboard() {
 if (!teksDisiapkanUntukShare) {
 if (currentCloudData) {
 teksDisiapkanUntukShare = rakitTeksShare().text;
 } else {
-alert("Data belum siap!");
+showToast("⚠️ Data belum siap!");
 return;
 }
 }
 if (navigator.clipboard && navigator.clipboard.writeText) {
 navigator.clipboard.writeText(teksDisiapkanUntukShare).then(() => {
-alert("Tautan & Koordinat lengkap berhasil disalin! Siap ditempel ke WhatsApp/Telegram.");
+showToast("Tautan informasi stasiun berhasil disalin ke papan klip.");
 }).catch(() => {
 salinTautanManualFallback(teksDisiapkanUntukShare);
 });
@@ -1247,6 +1298,8 @@ salinTautanManualFallback(teksDisiapkanUntukShare);
 }
 document.getElementById('shareModal').style.display = "none";
 }
+
+// PERBAIKAN: Fungsi fallback salin manual tanpa alert dialog browser
 function salinTautanManualFallback(tautan) {
 const el = document.createElement('textarea');
 el.value = tautan;
@@ -1257,12 +1310,13 @@ document.body.appendChild(el);
 el.select();
 try {
 document.execCommand('copy');
-alert("Tautan & Koordinat lengkap berhasil disalin!");
+showToast("Tautan informasi stasiun berhasil disalin ke papan klip.");
 } catch (err) {
-alert("Gagal menyalin otomatis. Silakan salin tautan berikut manual:\n" + tautan);
+showToast("⚠️ Gagal menyalin tautan secara otomatis.");
 }
 document.body.removeChild(el);
 }
+
 function tutupPanelAtribut() {
 document.getElementById('bottom-attribute-panel').classList.remove('active');
 bersihkanRuteInternal();
@@ -1334,7 +1388,6 @@ if (shareBtnEl) {
   shareBtnEl.removeAttribute('onclick');
   shareBtnEl.addEventListener('click', function(e) {
     e.stopPropagation();
-    // Langsung menjalankan fungsi salin ke clipboard sekali klik tanpa memunculkan modal bagikan
     salinTautanKeClipboard();
   });
 }
