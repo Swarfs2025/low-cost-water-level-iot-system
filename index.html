@@ -1159,7 +1159,7 @@ let teksDisiapkanUntukShare = "";
 function rakitTeksShare() {
 const lat = parseToValidCoord(currentCloudData.latitude, false);
 const lng = parseToValidCoord(currentCloudData.longitude, true);
-// FIX: Memperbaiki kesalahan penulisan interpolasi string literal `3{lat}` menjadi `${lat}`
+// FIX: Memperbaiki kesalahan penulisan interpolasi string literal `3{lat}` menjadi `${lat}` dan mengubah skema http://googleusercontent... menjadi peta standar google maps hlm web.
 const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
 return {
 title: `Monitoring: ${currentCloudData.nama_titik}`,
@@ -1211,8 +1211,9 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlWa = `https://api.whatsapp.com/send?text=${textEncoded}`;
-window.open(urlWa, '_blank');
+// FIX: Menggunakan protokol skema aplikasi native 'whatsapp://' agar memicu pembukaan aplikasi langsung di Android WebView MIT App Inventor
+const urlWa = `whatsapp://send?text=${textEncoded}`;
+window.location.href = urlWa;
 document.getElementById('shareModal').style.display = "none";
 }
 function shareKeTelegram() {
@@ -1221,8 +1222,9 @@ alert("Teks belum siap!");
 return;
 }
 const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
-const urlTg = `https://t.me/share/url?url=&text=${textEncoded}`;
-window.open(urlTg, '_blank');
+// FIX: Menggunakan protokol skema aplikasi native 'tg://' agar memicu pembukaan aplikasi langsung di Android WebView MIT App Inventor
+const urlTg = `tg://msg_url?url=&text=${textEncoded}`;
+window.location.href = urlTg;
 document.getElementById('shareModal').style.display = "none";
 }
 function salinTautanKeClipboard() {
