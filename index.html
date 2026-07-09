@@ -1250,7 +1250,6 @@ function rakitTeksShare() {
         return str + ' '.repeat(Math.max(0, totalLebar - str.length));
     }
 
-    // Mengubah jeda baris \n\n setelah baris "Blok" menjadi \n agar "Created At" rapat tanpa spasi blok
     let teksPesan = `LCWL 2.0 | LOW COST WATER LEVEL\n\n` +
                     `📍 *Informasi Lokasi*\n` +
                     `\`${padRight("Nama Titik", 16)}: ${currentCloudData.nama_titik}\`\n` +
@@ -1326,7 +1325,7 @@ return;
 if (window.AppInventor) {
 window.AppInventor.setWebViewString("TG:" + teksDisiapkanUntukShare);
 } else {
-const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
+const textEncoded = encodeURIComponent(teksDisiapkanUsefulShare);
 window.location.href = `https://telegram.me/share/url?text=${textEncoded}`;
 }
 document.getElementById('shareModal').style.display = "none";
@@ -1374,7 +1373,10 @@ function tutupPanelAtribut() {
 document.getElementById('bottom-attribute-panel').classList.remove('active');
 bersihkanRuteInternal();
 }
+
 map.locate({ setView: false, watch: true, enableHighAccuracy: true, timeout: 10000 });
+
+// === MEKANISME NAVIGASI REAL-TIME YANG DIPERBAIKI ===
 map.on('locationfound', function(e) {
 currentPositionUser = e.latlng;
 userLocationLayer.clearLayers();
@@ -1389,15 +1391,12 @@ iconAnchor: [7, 7]
 L.marker(e.latlng, { icon: userIcon, zIndexOffset: 1000 }).addTo(userLocationLayer);
 
 if (isNavigatingActive && currentDestinationLat && currentDestinationLng) {
-if (internalRoutingControl) {
-internalRoutingControl.setWaypoints([
-L.latLng(e.latlng.lat, e.latlng.lng),
-L.latLng(currentDestinationLat, currentDestinationLng)
-]);
-}
-map.setView([e.latlng.lat, e.latlng.lng]);
+// Memicu pembersihan rute lama dan hitung ulang rute dari posisi motor terbaru ke stasiun tujuan
+prosesRuteJalanInternal(currentDestinationLat, currentDestinationLng);
+map.setView([e.latlng.lat, e.latlng.lng], 18);
 }
 });
+
 map.on('locationerror', function(e) {
 const statusDebug = document.getElementById('debug-text');
 if (statusDebug) { statusDebug.innerHTML = `<span style='color:orange; font-weight:bold;'>GPS Device: ${e.message}</span>`; }
