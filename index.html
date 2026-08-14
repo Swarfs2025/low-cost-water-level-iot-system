@@ -384,8 +384,8 @@ body, html {
 
 @media (max-width: 768px) {
   .modal-side-sheet {
-    width: 60vw;
-    right: -60vw;
+    width: 75vw;
+    right: -75vw;
     min-width: unset;
   }
 }
@@ -727,7 +727,6 @@ body, html {
 .status-tag.online { background: #e0f2fe; color: #0284c7; }
 .status-tag.offline { background: #f1f5f9; color: #64748b; }
 
-/* Dinamik Warna T. Muka Air */
 .tma-text.bahaya { color: #dc2626; font-weight: 800; }
 .tma-text.waspada { color: #d97706; font-weight: 800; }
 .tma-text.aman { color: #16a34a; font-weight: 800; }
@@ -1216,7 +1215,7 @@ body, html {
       </div>
     </div>
 
-    <!-- Top Alert Table (3. TOP ALERT) -->
+    <!-- Top Alert Table -->
     <div class="table-alert-card">
       <div class="dash-panel-title">
         <span>3. TOP ALERT – PERANGKAT MEMBUTUHKAN PERHATIAN</span>
@@ -1284,6 +1283,7 @@ body, html {
   </div>
 </div>
 
+<!-- FILTER MODAL -->
 <div id="filter-modal" class="modal-side-sheet">
   <div class="filter-ui-header">
     <h3 class="title"><i class="fa-solid fa-filter" style="margin-right: 6px; color: #3b82f6;"></i> Filter Data Perangkat</h3>
@@ -1385,6 +1385,7 @@ body, html {
   </div>
 </div>
 
+<!-- LAYER MODAL -->
 <div id="layer-modal" class="modal-side-sheet" style="padding: 16px;">
   <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid #f1f5f9;">
     <h3 style="margin:0; font-size:15px; font-weight:700;">Layer Map</h3>
@@ -1778,8 +1779,13 @@ function updateDashboardUI() {
 }
 
 function renderDonutChart(aman, waspada, bahaya, offline) {
-  const ctx = document.getElementById('statusDonutChart').getContext('2d');
-  if (statusChartInstance) statusChartInstance.destroy();
+  const canvasEl = document.getElementById('statusDonutChart');
+  if (!canvasEl) return;
+  const ctx = canvasEl.getContext('2d');
+  
+  if (statusChartInstance) {
+    statusChartInstance.destroy();
+  }
 
   statusChartInstance = new Chart(ctx, {
     type: 'doughnut',
