@@ -1165,26 +1165,29 @@ function cariKoordinatDariInputText(inputText) {
   if (!inputText) return null;
   const inputClean = inputText.trim().toLowerCase();
   
-  if (currentCloudData) {
-    const devId = (currentCloudData.device_id || "").toString().toLowerCase();
-    const namaTitik = (currentCloudData.nama_titik || "").toString().toLowerCase();
-    
-    if (inputClean === devId || inputClean.includes(devId) || inputClean.includes(namaTitik)) {
-      const lat = parseToValidCoord(currentCloudData.latitude, false);
-      const lng = parseToValidCoord(currentCloudData.longitude, true);
-      if (lat !== null && lng !== null) return { lat, lng };
-    }
-  }
-
-  if ((inputClean.includes("lokasi anda") || inputClean.includes("gps")) && currentPositionUser) {
-    return { lat: currentPositionUser.lat, lng: currentPositionUser.lng };
-  }
-
+  // 1. Ekstrak pola koordinat langsung (termasuk string dari "Lokasi Anda (lat, lng)")
   const coordMatch = inputClean.match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
   if (coordMatch) {
     const lat = parseToValidCoord(coordMatch[1], false);
     const lng = parseToValidCoord(coordMatch[2], true);
     if (lat !== null && lng !== null) return { lat, lng };
+  }
+
+  // 2. Cek kata kunci GPS jika nilai koordinat tidak ditulis eksplisit
+  if ((inputClean.includes("lokasi") || inputClean.includes("saya") || inputClean.includes("gps") || inputClean.includes("anda")) && currentPositionUser) {
+    return { lat: currentPositionUser.lat, lng: currentPositionUser.lng };
+  }
+
+  // 3. Cek Device ID atau Nama Titik
+  if (currentCloudData) {
+    const devId = (currentCloudData.device_id || "").toString().toLowerCase();
+    const namaTitik = (currentCloudData.nama_titik || "").toString().toLowerCase();
+    
+    if (devId && (inputClean === devId || inputClean.includes(devId) || (namaTitik && inputClean.includes(namaTitik)))) {
+      const lat = parseToValidCoord(currentCloudData.latitude, false);
+      const lng = parseToValidCoord(currentCloudData.longitude, true);
+      if (lat !== null && lng !== null) return { lat, lng };
+    }
   }
 
   return null;
