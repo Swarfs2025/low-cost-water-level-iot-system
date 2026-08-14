@@ -193,18 +193,18 @@ flex-shrink: 0;
 #debug-panel { padding: 5px 8px; font-size: 10px; }
 .google-label-text { font-size: 9px !important; }
 .google-thumbnail { aspect-ratio: 1.4 / 1 !important; border-radius: 6px !important; }
-#bottom-attribute-panel { width: 100% !important; height: auto !important; max-height: 420px !important; border-radius: 0 !important; }
+#bottom-attribute-panel { width: 100% !important; height: auto !important; max-height: 480px !important; border-radius: 0 !important; }
 }
 
 #bottom-attribute-panel {
 position: absolute;
-bottom: -500px;
+bottom: -600px;
 left: 50%;
 transform: translateX(-50%);
 width: 100%;
 max-width: 950px;
 height: auto;
-max-height: 420px;
+max-height: 480px;
 background: rgba(255, 255, 255, 0.98);
 backdrop-filter: blur(15px);
 -webkit-backdrop-filter: blur(15px);
@@ -241,7 +241,7 @@ padding: 0 5px;
 }
 .table-responsive-container {
 width: 100%;
-max-height: 140px;
+max-height: 130px;
 overflow-x: auto !important;
 overflow-y: hidden !important;
 background: #ffffff;
@@ -280,12 +280,20 @@ background: #f9f9f9;
 #route-inputs-container {
 display: none;
 flex-direction: column;
-gap: 6px;
-background: #f1f3f4;
-padding: 8px 10px;
+gap: 8px;
+background: #f8f9fa;
+padding: 10px;
 border-radius: 8px;
 border: 1px solid #dadce0;
 margin-top: 4px;
+position: relative;
+z-index: 6000;
+}
+.route-input-wrapper {
+position: relative;
+display: flex;
+flex-direction: column;
+width: 100%;
 }
 .route-input-group {
 display: flex;
@@ -300,23 +308,63 @@ color: #3c4043;
 }
 .route-input-group input {
 flex: 1;
-padding: 5px 8px;
+padding: 6px 10px;
 border: 1px solid #ccc;
 border-radius: 4px;
-font-size: 11px;
-background: #fff;
-color: #202124;
+font-size: 12px;
+background: #ffffff !important;
+color: #202124 !important;
+outline: none;
+-webkit-user-select: text !important;
+user-select: text !important;
+pointer-events: auto !important;
 }
+.route-input-group input:focus {
+border-color: #1a73e8;
+box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
+}
+
+.custom-suggest-box {
+position: absolute;
+top: 100%;
+left: 71px;
+right: 0;
+background: #ffffff;
+border: 1px solid #1a73e8;
+border-radius: 0 0 6px 6px;
+max-height: 120px;
+overflow-y: auto;
+z-index: 9999;
+box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+display: none;
+}
+.suggest-item {
+padding: 6px 10px;
+font-size: 11px;
+cursor: pointer;
+border-bottom: 1px solid #eee;
+color: #333;
+}
+.suggest-item:hover, .suggest-item:active {
+background-color: #e8f0fe;
+color: #1a73e8;
+font-weight: bold;
+}
+
 .btn-calc-route {
 background: #1a73e8;
 color: white;
 border: none;
-padding: 4px 10px;
+padding: 6px 12px;
 border-radius: 4px;
 cursor: pointer;
-font-size: 11px;
+font-size: 11.5px;
 font-weight: bold;
 align-self: flex-end;
+display: flex;
+align-items: center;
+gap: 5px;
+box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .navigation-action-bar {
@@ -745,11 +793,13 @@ justify-content: center;
 <div id="debug-text" style="font-size: 10.5px;">Menghubungkan ke cloud server Google Sheet...</div>
 </div>
 </div>
+
 <div id="bottom-attribute-panel">
 <div class="panel-header">
 <strong id="panel-device-title" style="color: #1a73e8; font-size: 13px;">Detail Informasi Alat</strong>
 <button class="close-panel-btn" onclick="tutupPanelAtribut()">×</button>
 </div>
+
 <div class="table-responsive-container" id="scroll-table-container">
 <table class="grid-table">
 <thead>
@@ -777,17 +827,23 @@ justify-content: center;
 </table>
 </div>
 
-<datalist id="device-list-options"></datalist>
-
 <div id="route-inputs-container">
-  <div class="route-input-group">
-    <label for="route-start-input"><i class="fa-solid fa-circle-dot" style="color:#1a73e8;"></i> Awal:</label>
-    <input type="text" id="route-start-input" list="device-list-options" placeholder="Ketik Device ID / Stasiun / Koordinat">
+  <div class="route-input-wrapper">
+    <div class="route-input-group">
+      <label for="route-start-input"><i class="fa-solid fa-circle-dot" style="color:#1a73e8;"></i> Awal:</label>
+      <input type="text" id="route-start-input" placeholder="Ketik Device ID / Stasiun / Koordinat" autocomplete="off" onkeyup="handleInputChange(this, 'suggest-start')">
+    </div>
+    <div id="suggest-start" class="custom-suggest-box"></div>
   </div>
-  <div class="route-input-group">
-    <label for="route-dest-input"><i class="fa-solid fa-location-dot" style="color:#ea4335;"></i> Tujuan:</label>
-    <input type="text" id="route-dest-input" list="device-list-options" placeholder="Ketik Device ID / Stasiun / Koordinat">
+
+  <div class="route-input-wrapper">
+    <div class="route-input-group">
+      <label for="route-dest-input"><i class="fa-solid fa-location-dot" style="color:#ea4335;"></i> Tujuan:</label>
+      <input type="text" id="route-dest-input" placeholder="Ketik Device ID / Stasiun / Koordinat" autocomplete="off" onkeyup="handleInputChange(this, 'suggest-dest')">
+    </div>
+    <div id="suggest-dest" class="custom-suggest-box"></div>
   </div>
+
   <button class="btn-calc-route" onclick="hitungRuteDariInputManual()"><i class="fa-solid fa-route"></i> Cari Rute</button>
 </div>
 
@@ -1051,8 +1107,6 @@ time_forecast: getValByKey(dataAlat, "time_forecast"),
 created_at: getValByKey(dataAlat, "created_at")
 };
 
-updateDatalistDeviceOptions();
-
 const splashStatus = document.getElementById('splash-status');
 if (splashStatus) splashStatus.innerHTML = "DATA ONLINE BERHASIL SINKRON!";
 applySmartFilter();
@@ -1063,31 +1117,66 @@ setTimeout(function() { splash.remove(); }, 600);
 }
 }
 
-function updateDatalistDeviceOptions() {
-  const datalist = document.getElementById('device-list-options');
-  if (!datalist || !currentCloudData) return;
-  datalist.innerHTML = `
-    <option value="${currentCloudData.device_id}">[ID] ${currentCloudData.nama_titik}</option>
-    <option value="${currentCloudData.nama_titik}">${currentCloudData.estate} - Blok ${currentCloudData.blok}</option>
-  `;
+function handleInputChange(inputElem, suggestBoxId) {
+  const query = inputElem.value.trim().toLowerCase();
+  const suggestBox = document.getElementById(suggestBoxId);
+  if (!suggestBox) return;
+
+  if (query.length === 0) {
+    suggestBox.style.display = 'none';
+    return;
+  }
+
+  let options = [];
+  if (currentPositionUser) {
+    options.push({ label: "📍 Lokasi Anda Saat Ini", val: `Lokasi Anda (${currentPositionUser.lat.toFixed(5)}, ${currentPositionUser.lng.toFixed(5)})` });
+  }
+
+  if (currentCloudData) {
+    const devId = (currentCloudData.device_id || "").toString();
+    const namaTitik = (currentCloudData.nama_titik || "").toString();
+    const estate = (currentCloudData.estate || "").toString();
+
+    if (devId.toLowerCase().includes(query) || namaTitik.toLowerCase().includes(query) || estate.toLowerCase().includes(query)) {
+      options.push({ label: `🆔 ${devId} - ${namaTitik}`, val: devId });
+    }
+  }
+
+  if (options.length > 0) {
+    suggestBox.innerHTML = options.map(opt => `<div class="suggest-item" onclick="pilihSaran('${inputElem.id}', '${suggestBoxId}', '${opt.val}')">${opt.label}</div>`).join('');
+    suggestBox.style.display = 'block';
+  } else {
+    suggestBox.style.display = 'none';
+  }
 }
+
+function pilihSaran(inputId, suggestBoxId, nilai) {
+  document.getElementById(inputId).value = nilai;
+  document.getElementById(suggestBoxId).style.display = 'none';
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.route-input-wrapper')) {
+    document.querySelectorAll('.custom-suggest-box').forEach(box => box.style.display = 'none');
+  }
+});
 
 function cariKoordinatDariInputText(inputText) {
   if (!inputText) return null;
   const inputClean = inputText.trim().toLowerCase();
   
   if (currentCloudData) {
-    const devId = (currentCloudData.device_id || "").toLowerCase();
-    const namaTitik = (currentCloudData.nama_titik || "").toLowerCase();
+    const devId = (currentCloudData.device_id || "").toString().toLowerCase();
+    const namaTitik = (currentCloudData.nama_titik || "").toString().toLowerCase();
     
-    if (inputClean.includes(devId) || devId.includes(inputClean) || inputClean.includes(namaTitik) || namaTitik.includes(inputClean)) {
+    if (inputClean === devId || inputClean.includes(devId) || inputClean.includes(namaTitik)) {
       const lat = parseToValidCoord(currentCloudData.latitude, false);
       const lng = parseToValidCoord(currentCloudData.longitude, true);
       if (lat !== null && lng !== null) return { lat, lng };
     }
   }
 
-  if (inputClean.includes("lokasi anda") && currentPositionUser) {
+  if ((inputClean.includes("lokasi anda") || inputClean.includes("gps")) && currentPositionUser) {
     return { lat: currentPositionUser.lat, lng: currentPositionUser.lng };
   }
 
@@ -1109,11 +1198,11 @@ function hitungRuteDariInputManual() {
   const destCoord = cariKoordinatDariInputText(destVal);
 
   if (!startCoord) {
-    showToast("Titik awal tidak ditemukan/salah! Masukkan Device ID yang valid.", false);
+    showToast("Titik awal tidak terdeteksi! Gunakan Device ID atau Lokasi GPS.", false);
     return;
   }
   if (!destCoord) {
-    showToast("Titik tujuan tidak ditemukan/salah! Masukkan Device ID yang valid.", false);
+    showToast("Titik tujuan tidak terdeteksi! Masukkan Device ID yang valid.", false);
     return;
   }
 
@@ -1525,36 +1614,15 @@ if (statusDebug) { statusDebug.innerHTML = `<span style='color:orange; font-weig
 });
 
 const panelBawahContainer = document.getElementById('bottom-attribute-panel');
-const tableScrollBox = document.getElementById('scroll-table-container');
-if (panelBawahContainer && tableScrollBox) {
-L.DomEvent.disableScrollPropagation(panelBawahContainer);
-L.DomEvent.disableClickPropagation(panelBawahContainer);
-let startX = 0;
-let scrollLeftStart = 0;
-let isMovingTable = false;
-tableScrollBox.addEventListener('touchstart', function(e) {
-isMovingTable = true;
-map.dragging.disable();
-startX = e.touches[0].pageX - tableScrollBox.offsetLeft;
-scrollLeftStart = tableScrollBox.scrollLeft;
-e.stopPropagation();
-}, { passive: true });
-tableScrollBox.addEventListener('touchmove', function(e) {
-if (!isMovingTable) return;
-const currentX = e.touches[0].pageX - tableScrollBox.offsetLeft;
-const walkX = (currentX - startX);
-tableScrollBox.scrollLeft = scrollLeftStart - walkX;
-e.stopPropagation();
-if(e.cancelable) e.preventDefault();
-}, { passive: false });
-tableScrollBox.addEventListener('touchend', function() {
-isMovingTable = false;
-map.dragging.enable();
-}, { passive: true });
-tableScrollBox.addEventListener('touchcancel', function() {
-isMovingTable = false;
-map.dragging.enable();
-}, { passive: true });
+const routeInputsContainer = document.getElementById('route-inputs-container');
+
+if (panelBawahContainer) {
+  L.DomEvent.disableClickPropagation(panelBawahContainer);
+}
+
+if (routeInputsContainer) {
+  L.DomEvent.disableClickPropagation(routeInputsContainer);
+  L.DomEvent.disableScrollPropagation(routeInputsContainer);
 }
 
 const shareBtnEl = document.getElementById('btn-maps-share');
