@@ -277,7 +277,6 @@ background: #fff;
 background: #f9f9f9;
 }
 
-/* CONTAINER INPUT RUTE TAMPIL SAAT 'MULAI' DIKLIK */
 #route-inputs-container {
 display: none;
 flex-direction: column;
@@ -721,9 +720,9 @@ justify-content: center;
 <hr style="margin: 3px 0; border: 0; border-top: 1px dashed #1a73e8; opacity: 0.3;">
 <div style="background: rgba(26,115,232,0.06); padding: 5px; border-radius: 4px; border-left: 3px solid #1a73e8; line-height: 1.3;">
 <span style="font-size: 10.5px; color: #555; font-weight: bold;">Monitoring Stasiun:</span><br>
-<div id="total-registered" style="font-size: 10.5px; color: #000000;">?? Perangkat Terdaftar: <span style="font-weight: bold;">0</span></div>
-<div id="total-online" style="font-size: 10.5px; color: #008000;">? Perangkat Online: <span style="font-weight: bold;">0</span></div>
-<div id="total-offline" style="font-size: 10.5px; color: #ff0000;">? Perangkat Offline: <span style="font-weight: bold;">0</span></div>
+<div id="total-registered" style="font-size: 10.5px; color: #000000;">Perangkat Terdaftar: <span style="font-weight: bold;">0</span></div>
+<div id="total-online" style="font-size: 10.5px; color: #008000;">Perangkat Online: <span style="font-weight: bold;">0</span></div>
+<div id="total-offline" style="font-size: 10.5px; color: #ff0000;">Perangkat Offline: <span style="font-weight: bold;">0</span></div>
 </div>
 <b style="color: #444; font-size: 11px;">Pencarian Pintar:</b>
 <input type="text" id="filter-search" placeholder="Ketik PSM atau Estate..." style="width: 93%; margin-top: 2px; padding: 4px; border-radius: 4px; border: 1px solid #aaa; background: rgba(255,255,255,0.4); font-size: 11px;" onkeyup="applySmartFilter()">
@@ -767,7 +766,6 @@ justify-content: center;
 </table>
 </div>
 
-<!-- CONTAINER INPUT LOKASI AWAL & TUJUAN (HANYA TAMPIL SAAT KLIK MULAI) -->
 <div id="route-inputs-container">
   <div class="route-input-group">
     <label for="route-start-input"><i class="fa-solid fa-circle-dot" style="color:#1a73e8;"></i> Awal:</label>
@@ -801,6 +799,7 @@ justify-content: center;
 </div>
 </div>
 </div>
+
 <div id="shareModal" class="custom-share-modal" onclick="tutupShareModal(event)">
 <div class="share-modal-content" onclick="event.stopPropagation()">
 <div class="share-modal-header">
@@ -823,7 +822,9 @@ justify-content: center;
 </div>
 </div>
 </div>
+
 <div id="map"></div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 <script>
@@ -851,6 +852,7 @@ worldCopyJump: true,
 maxBounds: [[-90, -180], [90, 180]],
 maxBoundsViscosity: 1.0
 }).setView([0, 0], 3);
+
 let isFirstLoad = true;
 let currentCloudData = null;
 let selectedStatusFilter = "ALL";
@@ -860,6 +862,7 @@ let currentDestinationLat = null;
 let currentDestinationLng = null;
 let isNavigatingActive = false;
 let dataRefreshInterval = null;
+let teksDisiapkanUntukShare = "";
 
 var googleDefault = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
 attribution: '© Google Maps Streets'
@@ -912,10 +915,12 @@ if (baseLayers[layerKey]) {
 baseLayers[layerKey].addTo(map);
 }
 }
+
 function setQuickStatusFilter(statusValue) {
 selectedStatusFilter = statusValue;
 applySmartFilter();
 }
+
 function parseToValidCoord(valRaw, isLongitude) {
 if (!valRaw) return null;
 let cleanStr = valRaw.toString().replace(/\s/g, '');
@@ -933,6 +938,7 @@ if (num < -90) { while (num < -90) num = num / 10; }
 }
 return num;
 }
+
 function dapatkanObjekWaktu(rawDateStr) {
 if (!rawDateStr) return null;
 if (rawDateStr.toString().includes("Date(")) {
@@ -952,6 +958,7 @@ return new Date(y, m, d, j, mn, det);
 let dObj = new Date(rawDateStr);
 return isNaN(dObj.getTime()) ? null : dObj;
 }
+
 function getValByKey(dataObj, keyName) {
 const target = keyName.toLowerCase().trim();
 for (let key in dataObj) {
@@ -961,6 +968,7 @@ return dataObj[key] !== null && dataObj[key] !== undefined ? dataObj[key] : "";
 }
 return "";
 }
+
 function formatWaktuIndo(rawDateStr) {
 let dateObj = dapatkanObjekWaktu(rawDateStr);
 if (!dateObj) return rawDateStr || "Baru Saja";
@@ -972,6 +980,7 @@ let mn = dateObj.getMinutes().toString().padStart(2, '0');
 let det = dateObj.getSeconds().toString().padStart(2, '0');
 return `${d}-${m}-${y} ${j}:${mn}:${det}`;
 }
+
 function fetchOnlineData() {
 const oldScript = document.getElementById('google-sheet-trigger');
 if (oldScript) oldScript.remove();
@@ -992,6 +1001,7 @@ dataRefreshInterval = null;
 };
 document.body.appendChild(script);
 }
+
 function processCloudData(response) {
 const debugDiv = document.getElementById('debug-text');
 if (!response || !response.table || !response.table.rows || response.table.rows.length === 0) {
@@ -1035,6 +1045,7 @@ splash.style.opacity = '0';
 setTimeout(function() { splash.remove(); }, 600);
 }
 }
+
 function applySmartFilter() {
 if (!currentCloudData) return;
 const debugDiv = document.getElementById('debug-text');
@@ -1126,7 +1137,6 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 
-// MODIFIKASI: KLIK TOMBOL MULAI UNTUK MENAMPILKAN INPUT TITIK AWAL DAN TUJUAN
 document.getElementById('btn-maps-start').onclick = function() {
 if (!currentPositionUser) {
 showToast("GPS belum terdeteksi. Izinkan akses lokasi.", false);
@@ -1134,11 +1144,9 @@ return;
 }
 isNavigatingActive = true;
 
-// Tampilkan kolom Input Awal dan Tujuan & Tombol Batal
 document.getElementById('route-inputs-container').style.display = 'flex';
 document.getElementById('btn-maps-cancel').style.display = 'inline-flex';
 
-// Isi otomatis kolom awal dan tujuan
 document.getElementById('route-start-input').value = `Lokasi Anda (${currentPositionUser.lat.toFixed(5)}, ${currentPositionUser.lng.toFixed(5)})`;
 document.getElementById('route-dest-input').value = `${attr.nama_titik} (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
 
@@ -1162,7 +1170,6 @@ if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><sp
 }
 }
 
-// FUNGSI UNTUK MEMBATALKAN/MENUTUP ROUTING BILA KLIK TOMBOL BATAL RUTE
 function batalFiturNavigasi() {
   document.getElementById('route-inputs-container').style.display = 'none';
   document.getElementById('btn-maps-cancel').style.display = 'none';
@@ -1247,6 +1254,7 @@ map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
 }
 });
 }
+
 function bersihkanRuteInternal() {
 if (internalRoutingControl) {
 map.removeControl(internalRoutingControl);
@@ -1261,9 +1269,10 @@ isNavigatingActive = false;
 currentDestinationLat = null;
 currentDestinationLng = null;
 }
-let teksDisiapkanUntukShare = "";
 
 function rakitTeksShare() {
+    if (!currentCloudData) return { title: "", text: "" };
+    
     const lat = parseToValidCoord(currentCloudData.latitude, false);
     const lng = parseToValidCoord(currentCloudData.longitude, true);
     
@@ -1343,15 +1352,18 @@ bukaModalKustom(teksDisiapkanUntukShare);
 bukaModalKustom(teksDisiapkanUntukShare);
 }
 }
+
 function bukaModalKustom(teksLengkap) {
 teksDisiapkanUntukShare = teksLengkap;
 document.getElementById('shareModal').style.display = "flex";
 }
+
 function tutupShareModal(event) {
 if (!event || event.target === document.getElementById('shareModal')) {
 document.getElementById('shareModal').style.display = "none";
 }
 }
+
 function shareKeWA() {
 if (!teksDisiapkanUntukShare) {
 showToast("Teks belum siap!", false);
@@ -1365,6 +1377,7 @@ window.location.href = `https://api.whatsapp.com/send?text=${textEncoded}`;
 }
 document.getElementById('shareModal').style.display = "none";
 }
+
 function shareKeTelegram() {
 if (!teksDisiapkanUntukShare) {
 showToast("Teks belum siap!", false);
@@ -1380,14 +1393,12 @@ document.getElementById('shareModal').style.display = "none";
 }
 
 function salinTautanKeClipboard() {
-if (!teksDisiapkanUntukShare) {
-if (currentCloudData) {
-teksDisiapkanUntukShare = rakitTeksShare().text;
-} else {
+if (!currentCloudData) {
 showToast("Data belum siap!", false);
 return;
 }
-}
+teksDisiapkanUntukShare = rakitTeksShare().text;
+
 if (navigator.clipboard && navigator.clipboard.writeText) {
 navigator.clipboard.writeText(teksDisiapkanUntukShare).then(() => {
 showToast("Tautan dan koordinat berhasil disalin ke clipboard.", true);
@@ -1483,7 +1494,6 @@ map.dragging.enable();
 
 const shareBtnEl = document.getElementById('btn-maps-share');
 if (shareBtnEl) {
-  shareBtnEl.removeAttribute('onclick');
   shareBtnEl.addEventListener('click', function(e) {
     e.stopPropagation();
     salinTautanKeClipboard();
@@ -1516,23 +1526,14 @@ window.addEventListener('popstate', function(event) {
   let shareModal = document.getElementById('shareModal');
   let bottomPanel = document.getElementById('bottom-attribute-panel');
 
-  let adaAktivitasUI = false;
-
   if (shareModal && shareModal.style.display === "flex") {
     shareModal.style.display = "none";
-    adaAktivitasUI = true;
   }
   else if (menuToggle && menuToggle.checked) {
     menuToggle.checked = false;
-    adaAktivitasUI = true;
   }
   else if (bottomPanel && bottomPanel.classList.contains('active')) {
     tutupPanelAtribut();
-    adaAktivitasUI = true;
-  }
-
-  if (adaAktivitasUI) {
-    window.history.pushState({ page: 'panel-active' }, '');
   }
 });
 
