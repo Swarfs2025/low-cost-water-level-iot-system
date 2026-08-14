@@ -1493,6 +1493,99 @@ map.getPane('userGpsPane').style.zIndex = 650;
 map.getPane('userGpsPane').style.pointerEvents = 'none';
 var userLocationLayer = L.layerGroup([], { pane: 'userGpsPane' }).addTo(map);
 
+/* ===== MODIFIKASI: INTEGRASI LOKASI USER (GPS) ===== */
+
+function renderUserLocationMarker(lat, lng, accuracy) {
+  userLocationLayer.clearLayers();
+
+  // Pulse Marker Animasi
+  const userIcon = L.divIcon({
+    className: 'custom-user-gps-marker',
+    html: `<div class="radar-marker-element" style="background-color: #0284c7; border-color: #ffffff;"></div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
+  });
+
+  const marker = L.marker([lat, lng], { icon: userIcon }).bindPopup("<b>Lokasi Anda</b>");
+  
+  // Lingkaran akurasi GPS
+  const accuracyCircle = L.circle([lat, lng], {
+    radius: accuracy || 30,
+    color: '#0284c7',
+    fillColor: '#0284c7',
+    fillOpacity: 0.15,
+    weight: 1
+  });
+
+  userLocationLayer.addLayer(accuracyCircle);
+  userLocationLayer.addLayer(marker);
+}
+
+function centerToUserGps() {
+  if (!navigator.geolocation) {
+    showToast("Fitur Geolocation tidak didukung di browser ini");
+    return;
+  }
+
+  showToast("Mencari lokasi Anda...");
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      renderUserLocationMarker(lat, lng, accuracy);
+      map.setView([lat, lng], 16);
+      showToast("Lokasi berhasil ditemukan");
+    },
+    (error) => {
+      showToast("Gagal mengambil lokasi: " + error.message);
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+function toggleUserTracking() {
+  const trackingBtn = document.getElementById('btn-toggle-tracking');
+  
+  if (isTrackingActive) {
+    if (watchPositionId !== null) {
+      navigator.geolocation.clearWatch(watchPositionId);
+      watchPositionId = null;
+    }
+    isTrackingActive = false;
+    if (trackingBtn) trackingBtn.classList.remove('active-tracking');
+    userLocationLayer.clearLayers();
+    showToast("Pelacakan lokasi dinonaktifkan");
+  } else {
+    if (!navigator.geolocation) {
+      showToast("Fitur Geolocation tidak didukung");
+      return;
+    }
+
+    isTrackingActive = true;
+    if (trackingBtn) trackingBtn.classList.add('active-tracking');
+    showToast("Pelacakan lokasi aktif...");
+
+    watchPositionId = navigator.geolocation.watchPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+
+        renderUserLocationMarker(lat, lng, accuracy);
+      },
+      (error) => {
+        showToast("Error tracking: " + error.message);
+      },
+      { enableHighAccuracy: true, maximumAge: 2000 }
+    );
+  }
+}
+
+/* ===== AKHIR MODIFIKASI LOKASI USER ===== */
+
 function tutupPanelAtribut() {
   const panel = document.getElementById('bottom-attribute-panel');
   if (panel) panel.classList.remove('active');
@@ -1543,7 +1636,10 @@ function updateNetworkStatus() {
 
 window.addEventListener('online', () => { updateNetworkStatus(); showToast("Koneksi terhubung kembali"); fetchOnlineData(); });
 window.addEventListener('offline', () => { updateNetworkStatus(); showToast("Koneksi terputus (Offline)"); });
-document.addEventListener('DOMContentLoaded', updateNetworkStatus);
+document.addEventListener('DOMContentLoaded', () => {
+  updateNetworkStatus();
+  fetchOnlineData();
+});
 
 function showToast(pesan) {
   const toast = document.createElement('div');
@@ -1694,6 +1790,141 @@ function processCloudData(response) {
   if (splash) { splash.style.opacity = '0'; setTimeout(() => splash.remove(), 500); }
 }
 
+function applySmartFilter() {
+  markerGroup.clearLayers();
+  
+  const searchText = document.getElementById('filter-search').value.toLowerCase();
+  
+  const chkAman = document.getElementById('chk-aman').checked;
+  const chkWaspada = document.getElementById('chk-waspada').checked;
+  const chkBahaya = document.getElementById('chk-bahaya').checked;
+  const chkOffline = document.getElementById('chk-offline').checked;
+
+  const selPsm = document.getElementById('select-psm').value;
+  const selEstate = document.getElementById('select-estate').value;
+  const selDivisi = document.getElementById('select-divisi').value;
+  const selBlok = document.getElementById('select-blok').value;
+
+  let countAman = 0, countWaspada = 0, countBahaya = 0, countOnline = 0, countOffline = 0;
+  let bounds = [];
+
+  allCloudDataList.forEach(item => {
+    if (item.status === 'AMAN') countAman++;
+    else if (item.status === 'WASPADA') countWaspada++;
+    else if (item.status === 'BAHAYA') countBahaya++;
+    
+    if (item.status === 'OFFLINE') countOffline++;
+    else countOnline++;
+
+    // Filter status
+    if (item.status === 'AMAN' && !chkAman) return;
+    if (item.status === 'WASPADA' && !chkWaspada) return;
+    if (item.status === 'BAHAYA' && !chkBahaya) return;
+    if (item.status === 'OFFLINE' && !chkOffline) return;
+
+    // Filter enterprise
+    if (selPsm !== 'ALL' && item.psm !== selPsm) return;
+    if (selEstate !== 'ALL' && item.estate !== selEstate) return;
+    if (selDivisi !== 'ALL' && item.divisi !== selDivisi) return;
+    if (selBlok !== 'ALL' && item.blok !== selBlok) return;
+
+    // Search query
+    if (searchText) {
+      const combinedStr = `${item.device_id} ${item.nama_titik} ${item.psm} ${item.estate} ${item.divisi} ${item.blok}`.toLowerCase();
+      if (!combinedStr.includes(searchText)) return;
+    }
+
+    const lat = parseToValidCoord(item.latitude, false);
+    const lng = parseToValidCoord(item.longitude, true);
+
+    if (lat !== null && lng !== null) {
+      bounds.push([lat, lng]);
+
+      let colorHex = '#64748b';
+      if (item.status === 'AMAN') colorHex = '#22c55e';
+      else if (item.status === 'WASPADA') colorHex = '#eab308';
+      else if (item.status === 'BAHAYA') colorHex = '#ef4444';
+
+      const customIcon = L.divIcon({
+        className: 'custom-station-marker',
+        html: `<div class="radar-marker-element" style="background-color: ${colorHex}; border-color: #ffffff;"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
+
+      const marker = L.marker([lat, lng], { icon: customIcon });
+      
+      marker.on('click', () => {
+        bukaPanelAtribut(item);
+      });
+
+      markerGroup.addLayer(marker);
+    }
+  });
+
+  document.getElementById('count-aman').innerText = countAman;
+  document.getElementById('count-waspada').innerText = countWaspada;
+  document.getElementById('count-bahaya').innerText = countBahaya;
+  document.getElementById('count-online').innerText = countOnline;
+  document.getElementById('count-offline').innerText = countOffline;
+
+  if (isFirstLoad && bounds.length > 0) {
+    map.fitBounds(bounds, { padding: [50, 50] });
+    isFirstLoad = false;
+  }
+}
+
+function setQuickStatusFilter(status) {
+  document.getElementById('chk-aman').checked = (status === 'AMAN' || status === 'ONLINE');
+  document.getElementById('chk-waspada').checked = (status === 'WASPADA' || status === 'ONLINE');
+  document.getElementById('chk-bahaya').checked = (status === 'BAHAYA' || status === 'ONLINE');
+  document.getElementById('chk-offline').checked = (status === 'OFFLINE');
+  applySmartFilter();
+}
+
+function bukaPanelAtribut(item) {
+  document.getElementById('panel-station-name').innerText = item.nama_titik;
+  document.getElementById('panel-station-sub').innerText = `${item.psm} - ${item.estate} (Divisi ${item.divisi} / Blok ${item.blok})`;
+  
+  const tag = document.getElementById('panel-status-tag');
+  tag.innerText = item.status;
+  tag.className = `status-tag ${item.status.toLowerCase()}`;
+
+  const tbody = document.getElementById('panel-table-body');
+  tbody.innerHTML = `
+    <tr>
+      <td>${item.device_id}</td>
+      <td>${item.nama_titik}</td>
+      <td>${item.psm}</td>
+      <td>${item.estate}</td>
+      <td>${item.divisi}</td>
+      <td>${item.blok}</td>
+      <td><span class="status-tag ${item.status.toLowerCase()}">${item.status}</span></td>
+      <td>${item.latitude}</td>
+      <td>${item.longitude}</td>
+      <td><b class="tma-text ${item.status.toLowerCase()}">${item.tinggi_muka_air} cm</b></td>
+      <td>${item.elevasi_muka_air}</td>
+      <td>${item.jarak}</td>
+      <td>${item.kecepatan}</td>
+      <td>${item.kategori_perubahan}</td>
+      <td>${item.time_forecast}</td>
+      <td>${formatWaktuIndo(item.created_at)}</td>
+    </tr>
+  `;
+
+  document.getElementById('btn-maps-route').onclick = () => {
+    const lat = parseToValidCoord(item.latitude, false);
+    const lng = parseToValidCoord(item.longitude, true);
+    if (lat !== null && lng !== null) {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+    } else {
+      showToast("Koordinat tidak valid untuk navigasi");
+    }
+  };
+
+  document.getElementById('bottom-attribute-panel').classList.add('active');
+}
+
 function updateDashboardUI() {
   if (allCloudDataList.length === 0) return;
 
@@ -1823,213 +2054,40 @@ function populateAllEnterpriseDropdowns() {
   });
 }
 
-function setQuickStatusFilter(statusVal) {
-  document.getElementById('chk-aman').checked = (statusVal === 'ALL' || statusVal === 'AMAN' || statusVal === 'ONLINE');
-  document.getElementById('chk-waspada').checked = (statusVal === 'ALL' || statusVal === 'WASPADA' || statusVal === 'ONLINE');
-  document.getElementById('chk-bahaya').checked = (statusVal === 'ALL' || statusVal === 'BAHAYA' || statusVal === 'ONLINE');
-  document.getElementById('chk-offline').checked = (statusVal === 'ALL' || statusVal === 'OFFLINE');
-
-  applySmartFilter();
-}
-
-function applySmartFilter() {
-  if (allCloudDataList.length === 0) return;
-  markerGroup.clearLayers();
-
-  const searchKeyword = document.getElementById('filter-search').value.toLowerCase();
-  const filterAman = document.getElementById('chk-aman').checked;
-  const filterWaspada = document.getElementById('chk-waspada').checked;
-  const filterBahaya = document.getElementById('chk-bahaya').checked;
-  const filterOffline = document.getElementById('chk-offline').checked;
-
-  const selPsm = document.getElementById('select-psm').value;
-  const selEstate = document.getElementById('select-estate').value;
-  const selDivisi = document.getElementById('select-divisi').value;
-  const selBlok = document.getElementById('select-blok').value;
-
-  let countAman = 0, countWaspada = 0, countBahaya = 0, countOnline = 0, countOffline = 0;
-
-  allCloudDataList.forEach(item => {
-    let matchStatus = false;
-    if (item.status === 'AMAN' && filterAman) matchStatus = true;
-    if (item.status === 'WASPADA' && filterWaspada) matchStatus = true;
-    if (item.status === 'BAHAYA' && filterBahaya) matchStatus = true;
-    if (item.status === 'OFFLINE' && filterOffline) matchStatus = true;
-
-    if (!matchStatus) return;
-
-    if (selPsm !== 'ALL' && item.psm !== selPsm) return;
-    if (selEstate !== 'ALL' && item.estate !== selEstate) return;
-    if (selDivisi !== 'ALL' && item.divisi !== selDivisi) return;
-    if (selBlok !== 'ALL' && item.blok !== selBlok) return;
-
-    if (searchKeyword) {
-      const combinedText = `${item.device_id} ${item.nama_titik} ${item.psm} ${item.estate} ${item.divisi} ${item.blok}`.toLowerCase();
-      if (!combinedText.includes(searchKeyword)) return;
-    }
-
-    if (item.status === 'AMAN') countAman++;
-    if (item.status === 'WASPADA') countWaspada++;
-    if (item.status === 'BAHAYA') countBahaya++;
-    if (item.status !== 'OFFLINE') countOnline++;
-    if (item.status === 'OFFLINE') countOffline++;
-
-    const lat = parseToValidCoord(item.latitude, false);
-    const lng = parseToValidCoord(item.longitude, true);
-
-    if (lat !== null && lng !== null) {
-      let color = '#64748b';
-      if (item.status === 'AMAN') color = '#22c55e';
-      else if (item.status === 'WASPADA') color = '#eab308';
-      else if (item.status === 'BAHAYA') color = '#ef4444';
-
-      const customIcon = L.divIcon({
-        className: 'custom-radar-icon',
-        html: `<div class="radar-marker-element" style="background-color: ${color}; border-color: ${color};"></div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
-      });
-
-      const marker = L.marker([lat, lng], { icon: customIcon }).addTo(markerGroup);
-      marker.on('click', () => openAttributePanel(item));
-
-      if (isFirstLoad) {
-        map.setView([lat, lng], 13);
-        isFirstLoad = false;
-      }
-    }
-  });
-
-  document.getElementById('count-aman').innerText = countAman;
-  document.getElementById('count-waspada').innerText = countWaspada;
-  document.getElementById('count-bahaya').innerText = countBahaya;
-  document.getElementById('count-online').innerText = countOnline;
-  document.getElementById('count-offline').innerText = countOffline;
-}
-
-function openAttributePanel(data) {
-  document.getElementById('panel-station-name').innerText = data.nama_titik;
-  document.getElementById('panel-station-sub').innerText = `${data.estate} / ${data.divisi} Blok ${data.blok}`;
-  
-  let statusClass = data.status.toLowerCase();
-  const tag = document.getElementById('panel-status-tag');
-  tag.className = `status-tag ${statusClass}`;
-  tag.innerText = data.status;
-
-  const tableBody = document.getElementById('panel-table-body');
-  if (tableBody) {
-    tableBody.innerHTML = `
-      <tr>
-        <td>${data.device_id}</td>
-        <td>${data.nama_titik}</td>
-        <td>${data.psm}</td>
-        <td>${data.estate}</td>
-        <td>${data.divisi}</td>
-        <td>${data.blok}</td>
-        <td><span class="status-badge-sm ${statusClass}">${data.status}</span></td>
-        <td>${data.latitude}</td>
-        <td>${data.longitude}</td>
-        <td><b class="tma-text ${statusClass}">${data.tinggi_muka_air} cm</b></td>
-        <td>${data.elevasi_muka_air}</td>
-        <td>${data.jarak}</td>
-        <td>${data.kecepatan}</td>
-        <td>${data.kategori_perubahan}</td>
-        <td>${data.time_forecast}</td>
-        <td>${data.created_at}</td>
-      </tr>
-    `;
-  }
-
-  const btnNav = document.getElementById('btn-maps-route');
-  btnNav.onclick = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${data.latitude},${data.longitude}`, '_blank');
-
-  document.getElementById('bottom-attribute-panel').classList.add('active');
-}
-
 function resetFilterUI() {
-  const resetBtn = document.querySelector('.btn-filter-reset');
-  if (resetBtn) {
-    resetBtn.classList.add('active-clicked');
-    setTimeout(() => resetBtn.classList.remove('active-clicked'), 300);
-  }
-
   document.getElementById('chk-aman').checked = true;
   document.getElementById('chk-waspada').checked = true;
   document.getElementById('chk-bahaya').checked = true;
   document.getElementById('chk-offline').checked = true;
+  document.getElementById('filter-search').value = "";
 
-  selectEnterpriseOption('psm', 'ALL', 'Semua PSM');
-  selectEnterpriseOption('estate', 'ALL', 'Semua Estate');
-  selectEnterpriseOption('divisi', 'ALL', 'Semua Divisi');
-  selectEnterpriseOption('blok', 'ALL', 'Semua Blok');
+  ['psm', 'estate', 'divisi', 'blok'].forEach(type => {
+    selectEnterpriseOption(type, 'ALL', `Semua ${type.toUpperCase()}`);
+  });
 
   applySmartFilter();
+  toggleSideModal('filter-modal');
+  showToast("Filter direset ke default");
 }
 
 function terapkanFilterUI() {
-  const applyBtn = document.querySelector('.btn-filter-apply');
-  if (applyBtn) {
-    applyBtn.classList.add('is-clicked');
-    setTimeout(() => applyBtn.classList.remove('is-clicked'), 300);
-  }
   applySmartFilter();
   toggleSideModal('filter-modal');
-}
-
-function centerToUserGps() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(position => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      map.setView([lat, lng], 15);
-      showToast("Berhasil menuju lokasi GPS");
-    }, () => showToast("Gagal mengambil lokasi GPS"));
-  }
-}
-
-function toggleUserTracking() {
-  const btn = document.getElementById('btn-toggle-tracking');
-  isTrackingActive = !isTrackingActive;
-  btn.classList.toggle('active-tracking', isTrackingActive);
-  showToast(isTrackingActive ? "Tracking aktif" : "Tracking nonaktif");
-}
-
-function padRight(str, length) {
-  return (str + "").padEnd(length);
+  showToast("Filter diterapkan");
 }
 
 function jalankanFiturShare() {
-  if (!currentCloudData) return;
-  const lat = parseToValidCoord(currentCloudData.latitude, false) ?? "";
-  const lng = parseToValidCoord(currentCloudData.longitude, true) ?? "";
-  const statusTeksPesan = currentCloudData.status || "-";
-  const googleMapsLink = (lat && lng) ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}` : "-";
-
-  let shareText = `LCWL 2.0 | LOW COST WATER LEVEL\n\n` +
-                  `📍 *Informasi Lokasi*\n` +
-                  `\`${padRight("Nama Titik", 16)}: ${currentCloudData.nama_titik}\`\n` +
-                  `\`${padRight("Status", 16)}: ${statusTeksPesan}\`\n` +
-                  `\`${padRight("Tinggi Muka Air", 16)}: ${currentCloudData.tinggi_muka_air} cm\`\n` +
-                  `\`${padRight("Estate", 16)}: ${currentCloudData.estate}\`\n` +
-                  `\`${padRight("Blok", 16)}: ${currentCloudData.blok}\`\n` +
-                  `\`${padRight("Created At", 16)}: ${currentCloudData.created_at}\`\n\n` +
-                  `📌 *Koordinat GPS*\n` +
-                  `\`${padRight("Latitude", 16)}: ${lat}\`\n` +
-                  `\`${padRight("Longitude", 16)}: ${lng}\`\n\n` +
-                  `🌐 *Google Maps*\n` +
-                  `${googleMapsLink}\n\n` +
-                  `Pesan ini dibuat secara otomatis oleh LCWL 2.0.`;
-
   if (navigator.share) {
-    navigator.share({ title: 'LCWL 2.0 - ' + currentCloudData.nama_titik, text: shareText }).catch(() => {});
+    navigator.share({
+      title: 'LCWL 2.0 WebGIS',
+      text: 'Lihat data monitoring muka air di WebGIS LCWL 2.0',
+      url: window.location.href,
+    }).catch(() => {});
   } else {
-    navigator.clipboard.writeText(shareText);
-    showToast("Informasi atribut berhasil disalin ke clipboard!");
+    navigator.clipboard.writeText(window.location.href);
+    showToast("Tautan berhasil disalin ke clipboard");
   }
 }
-
-fetchOnlineData();
-setInterval(fetchOnlineData, 30000);
 </script>
 </body>
 </html>
