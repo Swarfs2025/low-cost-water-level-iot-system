@@ -1622,6 +1622,8 @@ function switchView(viewId, element) {
 function updateNetworkStatus() {
   const badge = document.getElementById('live-badge-status');
   const text = document.getElementById('live-status-text');
+  if (!badge || !text) return;
+
   if (navigator.onLine) {
     badge.className = 'live-badge is-online';
     text.innerText = 'LIVE';
@@ -1631,8 +1633,17 @@ function updateNetworkStatus() {
   }
 }
 
-window.addEventListener('online', () => { updateNetworkStatus(); showToast("Koneksi terhubung kembali"); fetchOnlineData(); });
-window.addEventListener('offline', () => { updateNetworkStatus(); showToast("Koneksi terputus (Offline)"); });
+window.addEventListener('online', () => { 
+  updateNetworkStatus(); 
+  showToast("Koneksi terhubung kembali"); 
+  fetchOnlineData(); 
+});
+
+window.addEventListener('offline', () => { 
+  updateNetworkStatus(); 
+  showToast("Koneksi terputus (Offline)"); 
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   updateNetworkStatus();
   fetchOnlineData();
@@ -1722,7 +1733,10 @@ function formatWaktuIndo(rawDateStr) {
 }
 
 function fetchOnlineData() {
-  if (!navigator.onLine) return;
+  if (!navigator.onLine) {
+    updateNetworkStatus();
+    return;
+  }
   const oldScript = document.getElementById('google-sheet-trigger');
   if (oldScript) oldScript.remove();
   const nocache = new Date().getTime();
