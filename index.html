@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Live WebGIS - Smart Water Level Monitoring</title>
+<title>Live WebGIS - Low Cost Water Level</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root {
   --primary: #0052cc;
@@ -18,7 +19,8 @@
   --danger: #dc2626;
   --warning: #d97706;
   --success: #16a34a;
-  --gray: #4b5563;
+  --info: #0284c7;
+  --gray: #64748b;
   --border-radius: 16px;
 }
 
@@ -34,8 +36,21 @@ body, html {
   height: 100%;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow: hidden;
-  background-color: #0d1117;
+  background-color: #f4f6f9;
   color: #1e293b;
+}
+
+.view-page {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+}
+
+.view-page.active-view {
+  display: block;
 }
 
 #map {
@@ -124,8 +139,45 @@ body, html {
 .brand-icon { width: 28px; height: 28px; background: #0052cc; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
 .brand-title { font-size: 14px; font-weight: 700; margin: 0; line-height: 1.2; }
 .brand-sub { font-size: 10px; color: #94a3b8; margin: 0; }
-.live-badge { background: rgba(22, 163, 74, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; display: flex; align-items: center; gap: 4px; }
-.live-dot { width: 6px; height: 6px; background: #4ade80; border-radius: 50%; animation: pulse 1.5s infinite; }
+
+.live-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.live-badge.is-online {
+  background: rgba(22, 163, 74, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.live-badge.is-offline {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.live-badge.is-online .live-dot {
+  background: #4ade80;
+  animation: pulse 1.5s infinite;
+}
+
+.live-badge.is-offline .live-dot {
+  background: #94a3b8;
+  animation: none;
+}
 
 @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
@@ -153,20 +205,24 @@ body, html {
   color: #1e293b;
 }
 
+/* Status Pills Container & Item */
 .status-pills-container {
   display: flex;
   gap: 6px;
   overflow-x: auto;
   pointer-events: auto;
-  padding-bottom: 2px;
+  padding-bottom: 4px;
+  scrollbar-width: none;
 }
+.status-pills-container::-webkit-scrollbar { display: none; }
+
 .status-pill {
-  flex: 1;
-  min-width: 70px;
+  flex: 0 0 auto;
+  white-space: nowrap;
   background: var(--card-bg);
   backdrop-filter: blur(10px);
   border-radius: 10px;
-  padding: 6px 8px;
+  padding: 6px 12px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -175,18 +231,26 @@ body, html {
   font-weight: 600;
   color: #334155;
   border: 1px solid rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  user-select: none;
 }
 .pill-count { font-weight: 800; font-size: 13px; }
 .pill-aman .pill-count { color: var(--success); }
 .pill-waspada .pill-count { color: var(--warning); }
 .pill-bahaya .pill-count { color: var(--danger); }
+.pill-online { color: var(--info); border-color: rgba(2, 132, 199, 0.2); }
+.pill-online .pill-count { color: var(--info); }
+.pill-online svg { width: 14px; height: 14px; stroke: currentColor; fill: none; display: block; }
+
+.pill-offline { color: var(--gray); border-color: rgba(100, 116, 139, 0.2); }
 .pill-offline .pill-count { color: var(--gray); }
+.pill-offline svg { width: 14px; height: 14px; stroke: currentColor; fill: none; display: block; }
 
 /* Floating Actions Bar Right */
 .floating-actions {
   position: absolute;
   right: 12px;
-  top: 145px;
+  top: 155px;
   z-index: 2000;
   display: flex;
   flex-direction: column;
@@ -209,6 +273,12 @@ body, html {
   transition: all 0.2s;
 }
 .fab-btn:active { transform: scale(0.92); }
+.fab-btn.active-tracking {
+  background: #0052cc;
+  color: #ffffff;
+  border-color: #003d99;
+  box-shadow: 0 0 10px rgba(0, 82, 204, 0.5);
+}
 
 /* Drawer & Navigation Menu */
 #menu-toggle { display: none; }
@@ -219,45 +289,87 @@ body, html {
   font-size: 18px;
   cursor: pointer;
 }
+
+.drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 8999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+#menu-toggle:checked ~ .drawer-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .menu-drawer-container {
   position: fixed;
   top: 0;
   left: -300px;
   width: 280px;
   height: 100%;
-  background: #ffffff;
+  background: #0f172a;
   z-index: 9000;
-  box-shadow: 5px 0 25px rgba(0,0,0,0.2);
+  box-shadow: 5px 0 25px rgba(0,0,0,0.3);
   transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  padding: 20px 16px;
+  padding: 0;
   overflow-y: auto;
 }
 #menu-toggle:checked ~ .menu-drawer-container { left: 0; }
-.drawer-header { display: flex; align-items: center; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9; margin-bottom: 16px; }
-.drawer-menu-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+
+.drawer-header { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  padding: 16px 20px; 
+  border-bottom: 1px solid #1e293b; 
+  background: rgba(15, 23, 42, 0.5);
+}
+.drawer-close-btn { background: none; border: none; font-size: 16px; color: #94a3b8; cursor: pointer; padding: 6px; border-radius: 8px; transition: background 0.2s; }
+.drawer-close-btn:hover { background: rgba(255,255,255,0.08); color: #ffffff; }
+
+.drawer-menu-list { 
+  list-style: none; 
+  padding: 16px 12px; 
+  margin: 0; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 4px; 
+  flex: 1;
+}
 .drawer-menu-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  border-radius: 10px;
-  color: #475569;
+  border-radius: 12px;
+  color: #cbd5e1;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
-.drawer-menu-item.active, .drawer-menu-item:hover { background: #f1f5f9; color: var(--primary); }
-.drawer-menu-item i { width: 20px; text-align: center; }
+.drawer-menu-item:hover { background: #1e293b; color: #ffffff; }
+.drawer-menu-item.active, .drawer-menu-item.active-menu { background: #0284c7 !important; color: #ffffff !important; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25); font-weight: 600; }
+.drawer-menu-item i { width: 20px; text-align: center; font-size: 14px; }
 
 /* Filter & Layer Map Side Sheet Modal */
 .modal-side-sheet {
   position: fixed;
   top: 0;
-  right: -360px;
-  width: 320px;
+  right: -60vw;
+  width: 60vw;
+  min-width: 260px;
   height: 100%;
   background: #ffffff;
   z-index: 8500;
@@ -265,48 +377,295 @@ body, html {
   transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: 0;
+  overflow-y: auto;
 }
 .modal-side-sheet.active { right: 0; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
-.modal-header h3 { margin: 0; font-size: 15px; font-weight: 700; color: #0f172a; }
-.close-btn { background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer; }
 
-/* Custom Selector & Inputs in Modal */
-.form-group { margin-top: 14px; }
-.form-group label { display: block; font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px; text-transform: uppercase; }
-.form-select, .form-input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
+@media (max-width: 768px) {
+  .modal-side-sheet {
+    width: 60vw;
+    right: -60vw;
+    min-width: unset;
+  }
+}
+
+.filter-ui-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #0f172a;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.filter-ui-header .nav-icon {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
   border-radius: 8px;
+  transition: background 0.2s;
+}
+.filter-ui-header .nav-icon:hover { background: rgba(255,255,255,0.1); }
+.filter-ui-header .title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+.filter-ui-header .title i {
   font-size: 12px;
-  font-family: inherit;
-  outline: none;
+}
+
+.filter-ui-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.filter-group-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.status-checkbox-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.status-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 10px;
+  font-weight: 600;
+  color: #334155;
+  background: #f8fafc;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.status-checkbox-item:hover { background: #f1f5f9; border-color: #cbd5e1; }
+
+.status-checkbox-item input[type="checkbox"] {
+  display: none;
+}
+
+.custom-chk {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.custom-chk i {
+  color: white;
+  font-size: 8px;
+  display: none;
+}
+
+.chk-aman .custom-chk { background-color: #22c55e; }
+.chk-waspada .custom-chk { background-color: #eab308; }
+.chk-bahaya .custom-chk { background-color: #ef4444; }
+.chk-offline .custom-chk { background-color: #64748b; }
+
+.status-checkbox-item input[type="checkbox"]:checked + .custom-chk i {
+  display: block;
+}
+
+.status-checkbox-item input[type="checkbox"]:not(:checked) + .custom-chk {
+  background-color: #cbd5e1 !important;
+}
+
+.filter-divider {
+  height: 1px;
+  background-color: #f1f5f9;
+  margin: 2px 0;
+}
+
+.enterprise-dropdown-container {
+  position: relative;
+  width: 100%;
+}
+
+.enterprise-dropdown-btn {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: all 0.2s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.enterprise-dropdown-btn:hover { border-color: var(--primary); background: #fafafa; }
+.enterprise-dropdown-btn i { color: #64748b; font-size: 10px; transition: transform 0.2s; flex-shrink: 0; }
+.enterprise-dropdown-container.active .enterprise-dropdown-btn i { transform: rotate(180deg); color: var(--primary); }
+.enterprise-dropdown-container.active .enterprise-dropdown-btn { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,82,204,0.12); }
+
+.enterprise-popup-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  z-index: 999;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  flex-direction: column;
+  padding: 4px;
+  animation: slideDownPopup 0.2s ease-out;
+}
+.enterprise-dropdown-container.active .enterprise-popup-list { display: flex; }
+
+@keyframes slideDownPopup {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.popup-list-item {
+  padding: 8px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #334155;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.15s, color 0.15s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.popup-list-item:hover { background: #f8fafc; color: var(--primary); }
+.popup-list-item.selected { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+.popup-list-item.selected::after {
+  content: '\f00c';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-size: 9px;
+  color: var(--primary);
+}
+
+.filter-ui-footer {
+  padding: 12px 16px 20px;
+  display: flex;
+  gap: 10px;
+  background: #ffffff;
+  border-top: 1px solid #f1f5f9;
+}
+
+.btn-filter-reset {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-weight: 700;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-filter-reset:hover { border-color: #94a3b8; color: #1e293b; background: #f8fafc; }
+.btn-filter-reset:active, .btn-filter-reset.active-clicked {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
+}
+
+.btn-filter-apply {
+  flex: 1.5;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-weight: 700;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-filter-apply:hover { border-color: #94a3b8; color: #1e293b; background: #f8fafc; }
+.btn-filter-apply.is-clicked {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.25);
+}
+
+.basemap-grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.basemap-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
   background: #f8fafc;
 }
-
-.basemap-grid-container, .detail-grid-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 8px;
-}
+.basemap-card:hover { border-color: #cbd5e1; }
 .google-card-input { display: none; }
-.google-maps-card { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-.google-thumbnail {
-  width: 100%;
-  aspect-ratio: 1.2 / 1;
+.google-card-input:checked + .basemap-card {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+.basemap-thumb {
+  width: 50px;
+  height: 50px;
   border-radius: 8px;
-  border: 2px solid #e2e8f0;
   background-size: cover;
   background-position: center;
-  position: relative;
-  overflow: hidden;
+  flex-shrink: 0;
 }
-.google-label-text { margin-top: 4px; font-size: 10px; font-weight: 600; color: #64748b; }
-.google-card-input:checked + .google-maps-card .google-thumbnail { border-color: var(--primary); }
-.google-card-input:checked + .google-maps-card .google-label-text { color: var(--primary); font-weight: 700; }
+.basemap-info { display: flex; flex-direction: column; }
+.basemap-title { font-size: 13px; font-weight: 700; color: #0f172a; }
 
 /* Bottom Sheet Atribut UI */
 #bottom-attribute-panel {
@@ -327,13 +686,13 @@ body, html {
   overflow-y: auto;
 }
 #bottom-attribute-panel.active { bottom: 0; }
-
 .bottom-sheet-drag {
   width: 36px;
   height: 4px;
   background: #cbd5e1;
   border-radius: 4px;
-  margin: 0 auto -4px;
+  margin: 0 auto 12px;
+  cursor: pointer;
 }
 .panel-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
 .station-title { font-size: 16px; font-weight: 800; color: #0f172a; margin: 0; }
@@ -348,6 +707,7 @@ body, html {
 .status-tag.bahaya { background: #fee2e2; color: #dc2626; }
 .status-tag.waspada { background: #fef3c7; color: #d97706; }
 .status-tag.aman { background: #dcfce7; color: #16a34a; }
+.status-tag.online { background: #e0f2fe; color: #0284c7; }
 .status-tag.offline { background: #f1f5f9; color: #64748b; }
 
 .metrics-grid {
@@ -394,7 +754,6 @@ body, html {
 .btn-outline { background: #f1f5f9; color: #334155; }
 .btn-primary { background: var(--primary); color: white; }
 
-/* Table Container (Hidden Mode or Responsive Mode) */
 .table-responsive-container {
   display: none;
   width: 100%;
@@ -408,20 +767,6 @@ body, html {
 .grid-table th { background: #f1f5f9; color: #475569; padding: 6px 10px; text-align: left; }
 .grid-table td { padding: 6px 10px; border-top: 1px solid #e2e8f0; }
 
-/* Custom Route Floating Inputs */
-#route-inputs-container {
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-  background: #f8fafc;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-}
-.route-input-group { display: flex; align-items: center; gap: 8px; font-size: 11px; }
-.route-input-group input { flex: 1; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; }
-
-/* Modal & Toast Base */
 .custom-toast {
   position: fixed;
   bottom: 24px;
@@ -439,7 +784,6 @@ body, html {
 }
 .custom-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* Radar Marker Styles */
 .radar-marker-element {
   position: relative;
   width: 16px;
@@ -461,221 +805,666 @@ body, html {
 }
 @keyframes radarPulse { 0% { transform: scale(0.6); opacity: 1; } 100% { transform: scale(2.6); opacity: 0; } }
 
-#debug-panel { display: none; }
+/* DASHBOARD MONITORING STYLES */
+#dashboard-view {
+  background-color: #f1f5f9;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 16px 80px;
+}
+
+.dash-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+
+.dash-header-left { display: flex; align-items: center; gap: 12px; }
+.dash-hamburger-btn { background: none; border: none; font-size: 20px; color: #0f172a; cursor: pointer; }
+
+.dash-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+  .dash-metrics-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
+  .dash-metrics-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.metric-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.metric-icon-box {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.card-blue .metric-icon-box { background: #e0f2fe; color: #0284c7; }
+.card-green .metric-icon-box { background: #dcfce7; color: #16a34a; }
+.card-yellow .metric-icon-box { background: #fef3c7; color: #d97706; }
+.card-red .metric-icon-box { background: #fee2e2; color: #dc2626; }
+.card-gray .metric-icon-box { background: #f1f5f9; color: #64748b; }
+
+.metric-info .val { font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1; }
+.metric-info .lbl { font-size: 10px; font-weight: 700; color: #64748b; margin-top: 4px; text-transform: uppercase; }
+.metric-info .sub { font-size: 9px; color: #94a3b8; margin-top: 2px; }
+
+.dash-middle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 850px) {
+  .dash-middle-grid { grid-template-columns: 1fr; }
+}
+
+.dash-panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.dash-panel-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+.chart-center-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.chart-center-text .total-val { font-size: 22px; font-weight: 800; color: #0f172a; }
+.chart-center-text .total-lbl { font-size: 9px; font-weight: 700; color: #94a3b8; }
+
+.chart-legend-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #334155; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.muka-air-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.water-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid #f1f5f9;
+}
+
+.water-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.water-card-data .label { font-size: 9px; font-weight: 700; color: #0052cc; text-transform: uppercase; }
+.water-card-data .val { font-size: 18px; font-weight: 800; color: #0f172a; margin: 2px 0; }
+.water-card-data .sub { font-size: 10px; color: #64748b; }
+
+.table-alert-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.dash-table th {
+  text-align: left;
+  padding: 10px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.dash-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #f8fafc;
+  color: #334155;
+  font-weight: 500;
+}
+
+.status-badge-sm {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-block;
+}
+
+.status-badge-sm.bahaya { background: #fee2e2; color: #dc2626; }
+.status-badge-sm.waspada { background: #fef3c7; color: #d97706; }
+.status-badge-sm.aman { background: #dcfce7; color: #16a34a; }
+.status-badge-sm.offline { background: #f1f5f9; color: #64748b; }
 </style>
 </head>
 <body>
 
-<!-- Splash Screen -->
 <div id="splash-screen">
   <div class="splash-content">
     <div class="splash-logo"><i class="fa-solid fa-droplet"></i></div>
     <h1 class="splash-title">LCWL 2.0</h1>
-    <p class="splash-subtitle">Smart Water Level Monitoring</p>
+    <p class="splash-subtitle">Low Cost Water Level</p>
     <div class="spinner"></div>
     <small id="splash-status">Menghubungkan ke Cloud Server...</small>
   </div>
 </div>
 
-<!-- Navigation Drawer Toggle -->
 <input type="checkbox" id="menu-toggle">
+<label for="menu-toggle" class="drawer-backdrop"></label>
 
-<!-- Top Overlay Header Controls -->
-<div class="top-header-container">
-  <div class="brand-bar">
-    <div class="brand-info">
-      <label for="menu-toggle" class="hamburger-btn"><i class="fa-solid fa-bars"></i></label>
-      <div>
-        <h2 class="brand-title">LCWL 2.0</h2>
-        <p class="brand-sub">Smart Water Level Monitoring</p>
+<!-- PAGE 1: MAP VIEW -->
+<div id="map-view" class="view-page active-view">
+  <div class="top-header-container">
+    <div class="brand-bar">
+      <div class="brand-info">
+        <label for="menu-toggle" class="hamburger-btn"><i class="fa-solid fa-bars"></i></label>
+        <div>
+          <h2 class="brand-title">LCWL 2.0</h2>
+          <p class="brand-sub">Low Cost Water Level</p>
+        </div>
+      </div>
+      <div class="live-badge is-online" id="live-badge-status">
+        <span class="live-dot"></span>
+        <span id="live-status-text">LIVE</span>
       </div>
     </div>
-    <div class="live-badge"><span class="live-dot"></span> LIVE</div>
+
+    <div class="search-bar-box">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="filter-search" placeholder="Telusuri perangkat, psm, estate, divisi, blok..." onkeyup="applySmartFilter()">
+    </div>
+
+    <div class="status-pills-container">
+      <div class="status-pill pill-aman" onclick="setQuickStatusFilter('AMAN')">
+        <i class="fa-solid fa-circle-check" style="color: var(--success); font-size: 11px;"></i>
+        <span class="pill-count" id="count-aman">0</span> Aman
+      </div>
+      <div class="status-pill pill-waspada" onclick="setQuickStatusFilter('WASPADA')">
+        <i class="fa-solid fa-triangle-exclamation" style="color: var(--warning); font-size: 11px;"></i>
+        <span class="pill-count" id="count-waspada">0</span> Waspada
+      </div>
+      <div class="status-pill pill-bahaya" onclick="setQuickStatusFilter('BAHAYA')">
+        <i class="fa-solid fa-square-xmark" style="color: var(--danger); font-size: 12px;"></i>
+        <span class="pill-count" id="count-bahaya">0</span> Bahaya
+      </div>
+      <div class="status-pill pill-online" onclick="setQuickStatusFilter('ONLINE')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12.55a11 11 0 0 1 14 0" />
+          <path d="M8.5 16.42a7 7 0 0 1 7 0" />
+          <path d="M12 20h.01" />
+        </svg>
+        <span class="pill-count" id="count-online">0</span> Online
+      </div>
+      <div class="status-pill pill-offline" onclick="setQuickStatusFilter('OFFLINE')">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="2" y1="2" x2="22" y2="22" />
+          <path d="M8.5 16.42a7 7 0 0 1 7 0" />
+          <path d="M5 12.55a11 11 0 0 1 3.25 -1.75" />
+          <path d="M15.75 10.8a11 11 0 0 1 3.25 1.75" />
+          <path d="M12 20h.01" />
+        </svg>
+        <span class="pill-count" id="count-offline">0</span> Offline
+      </div>
+    </div>
   </div>
 
-  <div class="search-bar-box">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <input type="text" id="filter-search" placeholder="Telusuri perangkat, estate, divisi, blok..." onkeyup="applySmartFilter()">
+  <div class="floating-actions">
+    <button class="fab-btn" onclick="toggleSideModal('filter-modal')" title="Filter"><i class="fa-solid fa-sliders"></i></button>
+    <button class="fab-btn" onclick="toggleSideModal('layer-modal')" title="Layer Map"><i class="fa-solid fa-layer-group"></i></button>
+    <button class="fab-btn" onclick="map.zoomIn()"><i class="fa-solid fa-plus"></i></button>
+    <button class="fab-btn" onclick="map.zoomOut()"><i class="fa-solid fa-minus"></i></button>
+    <button class="fab-btn" onclick="centerToUserGps()"><i class="fa-solid fa-crosshairs"></i></button>
+    <button class="fab-btn" id="btn-toggle-tracking" onclick="toggleUserTracking()" title="Toggle Live Trail Tracking"><i class="fa-solid fa-route"></i></button>
   </div>
 
-  <div class="status-pills-container">
-    <div class="status-pill pill-aman" onclick="setQuickStatusFilter('AMAN')">
-      <i class="fa-solid fa-circle" style="color: var(--success); font-size: 8px;"></i>
-      <span class="pill-count" id="count-aman">0</span> Aman
+  <div id="map"></div>
+</div>
+
+<!-- PAGE 2: DASHBOARD VIEW -->
+<div id="dashboard-view" class="view-page">
+  <div class="dashboard-container">
+    <div class="dash-top-bar">
+      <div class="dash-header-left">
+        <label for="menu-toggle" class="dash-hamburger-btn"><i class="fa-solid fa-bars"></i></label>
+        <div>
+          <h2 style="margin:0; font-size:16px; font-weight:800;">Dashboard Monitoring</h2>
+          <small style="color:#64748b;">Ringkasan kondisi seluruh perangkat LCWL 2.0</small>
+        </div>
+      </div>
+      <div style="font-size: 11px; font-weight:700; color:#0052cc;" id="dash-time-indicator">-</div>
     </div>
-    <div class="status-pill pill-waspada" onclick="setQuickStatusFilter('WASPADA')">
-      <i class="fa-solid fa-circle" style="color: var(--warning); font-size: 8px;"></i>
-      <span class="pill-count" id="count-waspada">0</span> Waspada
+
+    <!-- Ringkasan Metrics (5 Card) -->
+    <div class="dash-metrics-grid">
+      <div class="metric-card card-blue">
+        <div class="metric-icon-box"><i class="fa-solid fa-microchip"></i></div>
+        <div class="metric-info">
+          <div class="val" id="dash-total-val">0</div>
+          <div class="lbl">Total</div>
+          <div class="sub">Perangkat Terpasang</div>
+        </div>
+      </div>
+
+      <div class="metric-card card-green">
+        <div class="metric-icon-box"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="metric-info">
+          <div class="val" id="dash-aman-val">0</div>
+          <div class="lbl">Aman</div>
+          <div class="sub" id="dash-aman-sub">0% dari total</div>
+        </div>
+      </div>
+
+      <div class="metric-card card-yellow">
+        <div class="metric-icon-box"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="metric-info">
+          <div class="val" id="dash-waspada-val">0</div>
+          <div class="lbl">Waspada</div>
+          <div class="sub" id="dash-waspada-sub">0% dari total</div>
+        </div>
+      </div>
+
+      <div class="metric-card card-red">
+        <div class="metric-icon-box"><i class="fa-solid fa-circle-xmark"></i></div>
+        <div class="metric-info">
+          <div class="val" id="dash-bahaya-val">0</div>
+          <div class="lbl">Bahaya</div>
+          <div class="sub" id="dash-bahaya-sub">0% dari total</div>
+        </div>
+      </div>
+
+      <div class="metric-card card-gray">
+        <div class="metric-icon-box"><i class="fa-solid fa-wifi"></i></div>
+        <div class="metric-info">
+          <div class="val" id="dash-offline-val">0</div>
+          <div class="lbl">Offline</div>
+          <div class="sub" id="dash-offline-sub">0% dari total</div>
+        </div>
+      </div>
     </div>
-    <div class="status-pill pill-bahaya" onclick="setQuickStatusFilter('BAHAYA')">
-      <i class="fa-solid fa-circle" style="color: var(--danger); font-size: 8px;"></i>
-      <span class="pill-count" id="count-bahaya">0</span> Bahaya
+
+    <!-- Middle Section (Chart & Water Metrics) -->
+    <div class="dash-middle-grid">
+      <div class="dash-panel">
+        <div class="dash-panel-title">1. STATUS PERANGKAT <i class="fa-solid fa-circle-info" style="color:#94a3b8;"></i></div>
+        <div class="chart-wrapper">
+          <canvas id="statusDonutChart"></canvas>
+          <div class="chart-center-text">
+            <div class="total-val" id="chart-center-val">0</div>
+            <div class="total-lbl">TOTAL</div>
+          </div>
+        </div>
+        <div class="chart-legend-grid">
+          <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span> Aman: <b id="leg-aman">0</b></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#eab308;"></span> Waspada: <b id="leg-waspada">0</b></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span> Bahaya: <b id="leg-bahaya">0</b></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#94a3b8;"></span> Offline: <b id="leg-offline">0</b></div>
+        </div>
+      </div>
+
+      <div class="dash-panel">
+        <div class="dash-panel-title">2. MONITORING MUKA AIR <i class="fa-solid fa-circle-info" style="color:#94a3b8;"></i></div>
+        <div class="muka-air-grid">
+          <div class="water-card">
+            <div class="water-card-icon" style="color:#0284c7;"><i class="fa-solid fa-water"></i></div>
+            <div class="water-card-data">
+              <div class="label">Rata-Rata Muka Air</div>
+              <div class="val" id="dash-avg-tma">-</div>
+              <div class="sub">Normal</div>
+            </div>
+          </div>
+
+          <div class="water-card">
+            <div class="water-card-icon" style="color:#dc2626;"><i class="fa-solid fa-arrow-up"></i></div>
+            <div class="water-card-data">
+              <div class="label">Tertinggi</div>
+              <div class="val" id="dash-max-tma">-</div>
+              <div class="sub" id="dash-max-device">-</div>
+            </div>
+          </div>
+
+          <div class="water-card">
+            <div class="water-card-icon" style="color:#16a34a;"><i class="fa-solid fa-arrow-down"></i></div>
+            <div class="water-card-data">
+              <div class="label">Terendah</div>
+              <div class="val" id="dash-min-tma">-</div>
+              <div class="sub" id="dash-min-device">-</div>
+            </div>
+          </div>
+
+          <div class="water-card">
+            <div class="water-card-icon" style="color:#d97706;"><i class="fa-solid fa-chart-line"></i></div>
+            <div class="water-card-data">
+              <div class="label">Kecepatan Perubahan</div>
+              <div class="val" id="dash-speed-tma">-</div>
+              <div class="sub">Rata-rata</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="status-pill pill-offline" onclick="setQuickStatusFilter('OFFLINE')">
-      <i class="fa-solid fa-circle" style="color: var(--gray); font-size: 8px;"></i>
-      <span class="pill-count" id="count-offline">0</span> Offline
+
+    <!-- Top Alert Table -->
+    <div class="table-alert-card">
+      <div class="dash-panel-title">
+        <span>3. TOP ALERT – PERANGKAT MEMBUTUHKAN PERHATIAN</span>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th>Perangkat</th>
+              <th>Lokasi</th>
+              <th>Status</th>
+              <th>Muka Air</th>
+              <th>Waktu Update</th>
+            </tr>
+          </thead>
+          <tbody id="dash-alert-tbody">
+            <tr><td colspan="5" style="text-align: center; color:#94a3b8;">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Floating Action Buttons -->
-<div class="floating-actions">
-  <button class="fab-btn" onclick="toggleSideModal('filter-modal')" title="Filter"><i class="fa-solid fa-sliders"></i></button>
-  <button class="fab-btn" onclick="toggleSideModal('layer-modal')" title="Layer Map"><i class="fa-solid fa-layer-group"></i></button>
-  <button class="fab-btn" onclick="map.zoomIn()"><i class="fa-solid fa-plus"></i></button>
-  <button class="fab-btn" onclick="map.zoomOut()"><i class="fa-solid fa-minus"></i></button>
-  <button class="fab-btn" onclick="centerToUserGps()"><i class="fa-solid fa-crosshairs"></i></button>
-</div>
-
-<!-- Left Drawer Menu -->
+<!-- MENU DRAWER -->
 <div class="menu-drawer-container">
   <div class="drawer-header">
-    <div class="brand-icon" style="background:#0052cc; color:white; border-radius:8px; padding:6px;"><i class="fa-solid fa-droplet"></i></div>
-    <div>
-      <h3 style="margin:0; font-size:14px;">LCWL 2.0</h3>
-      <small style="color:#64748b;">Smart Water Level</small>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div class="brand-icon" style="background:#0052cc; color:white; border-radius:8px; padding:6px;"><i class="fa-solid fa-droplet"></i></div>
+      <div>
+        <h3 style="margin:0; font-size:14px; color: #ffffff;">LCWL 2.0</h3>
+        <small style="color:#94a3b8;">Low Cost Water Level</small>
+      </div>
     </div>
+    <label for="menu-toggle" class="drawer-close-btn"><i class="fa-solid fa-xmark"></i></label>
   </div>
   <ul class="drawer-menu-list">
-    <a class="drawer-menu-item active"><i class="fa-solid fa-map"></i> Peta Utama</a>
-    <a class="drawer-menu-item"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-    <a class="drawer-menu-item"><i class="fa-solid fa-chart-area"></i> Grafik History</a>
-    <a class="drawer-menu-item"><i class="fa-solid fa-bell"></i> Alert / Notifikasi</a>
-    <a class="drawer-menu-item"><i class="fa-solid fa-microchip"></i> Perangkat</a>
-    <a class="drawer-menu-item" onclick="toggleSideModal('layer-modal')"><i class="fa-solid fa-layer-group"></i> Layer Map</a>
-    <a class="drawer-menu-item"><i class="fa-solid fa-gear"></i> Pengaturan</a>
-    <a class="drawer-menu-item"><i class="fa-solid fa-circle-info"></i> Info Aplikasi</a>
+    <a class="drawer-menu-item active-menu" onclick="switchView('map-view', this)"><i class="fa-solid fa-map"></i> Peta Utama</a>
+    <a class="drawer-menu-item" onclick="switchView('dashboard-view', this)"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+    <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-chart-area"></i> Grafik History</a>
+    <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-bell"></i> Alert / Notifikasi</a>
+    <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-microchip"></i> Perangkat</a>
+    <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-gear"></i> Pengaturan</a>
+    <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-circle-info"></i> Info Aplikasi</a>
   </ul>
+  <div style="padding: 16px 20px; border-top: 1px solid #1e293b; background: rgba(15, 23, 42, 0.3);">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+        <span style="font-size: 11px; color: #94a3b8; font-weight: 500;">System Online</span>
+      </div>
+      <span style="font-size: 11px; font-family: monospace; color: #64748b;">v2.0</span>
+    </div>
+  </div>
 </div>
 
-<!-- Side Sheet Modal: Filter -->
 <div id="filter-modal" class="modal-side-sheet">
-  <div class="modal-header">
-    <h3>Filter Perangkat</h3>
-    <button class="close-btn" onclick="toggleSideModal('filter-modal')">×</button>
+  <div class="filter-ui-header">
+    <h3 class="title"><i class="fa-solid fa-filter" style="margin-right: 6px; color: #3b82f6;"></i> Filter Data Perangkat</h3>
+    <button class="nav-icon" onclick="toggleSideModal('filter-modal')"><i class="fa-solid fa-xmark"></i></button>
   </div>
-  <div class="form-group">
-    <label>Status Monitoring</label>
-    <select class="form-select" id="filter-status-select" onchange="setQuickStatusFilter(this.value)">
-      <option value="ALL">Semua Status</option>
-      <option value="AMAN">Aman</option>
-      <option value="WASPADA">Waspada</option>
-      <option value="BAHAYA">Bahaya</option>
-      <option value="OFFLINE">Offline</option>
-    </select>
+  
+  <div class="filter-ui-body">
+    <div>
+      <div class="filter-group-title">Status Kondisi</div>
+      <div class="status-checkbox-list">
+        <label class="status-checkbox-item chk-aman">
+          <input type="checkbox" id="chk-aman" value="AMAN" checked>
+          <span class="custom-chk"><i class="fa-solid fa-check"></i></span>
+          Aman
+        </label>
+        
+        <label class="status-checkbox-item chk-waspada">
+          <input type="checkbox" id="chk-waspada" value="WASPADA" checked>
+          <span class="custom-chk"><i class="fa-solid fa-check"></i></span>
+          Waspada
+        </label>
+        
+        <label class="status-checkbox-item chk-bahaya">
+          <input type="checkbox" id="chk-bahaya" value="BAHAYA" checked>
+          <span class="custom-chk"><i class="fa-solid fa-check"></i></span>
+          Bahaya
+        </label>
+        
+        <label class="status-checkbox-item chk-offline">
+          <input type="checkbox" id="chk-offline" value="OFFLINE" checked>
+          <span class="custom-chk"><i class="fa-solid fa-check"></i></span>
+          Offline
+        </label>
+      </div>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <div>
+      <div class="filter-group-title">PSM (Plantation Support Management)</div>
+      <div class="enterprise-dropdown-container" id="dropdown-container-psm">
+        <div class="enterprise-dropdown-btn" onclick="toggleEnterpriseDropdown('dropdown-container-psm')">
+          <span id="selected-label-psm">Semua PSM</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+        <div class="enterprise-popup-list" id="popup-list-psm">
+          <div class="popup-list-item selected" onclick="selectEnterpriseOption('psm', 'ALL', 'Semua PSM')">Semua PSM</div>
+        </div>
+      </div>
+      <input type="hidden" id="select-psm" value="ALL">
+    </div>
+
+    <div>
+      <div class="filter-group-title">Estate</div>
+      <div class="enterprise-dropdown-container" id="dropdown-container-estate">
+        <div class="enterprise-dropdown-btn" onclick="toggleEnterpriseDropdown('dropdown-container-estate')">
+          <span id="selected-label-estate">Semua Estate</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+        <div class="enterprise-popup-list" id="popup-list-estate">
+          <div class="popup-list-item selected" onclick="selectEnterpriseOption('estate', 'ALL', 'Semua Estate')">Semua Estate</div>
+        </div>
+      </div>
+      <input type="hidden" id="select-estate" value="ALL">
+    </div>
+
+    <div>
+      <div class="filter-group-title">Divisi</div>
+      <div class="enterprise-dropdown-container" id="dropdown-container-divisi">
+        <div class="enterprise-dropdown-btn" onclick="toggleEnterpriseDropdown('dropdown-container-divisi')">
+          <span id="selected-label-divisi">Semua Divisi</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+        <div class="enterprise-popup-list" id="popup-list-divisi">
+          <div class="popup-list-item selected" onclick="selectEnterpriseOption('divisi', 'ALL', 'Semua Divisi')">Semua Divisi</div>
+        </div>
+      </div>
+      <input type="hidden" id="select-divisi" value="ALL">
+    </div>
+
+    <div>
+      <div class="filter-group-title">Blok</div>
+      <div class="enterprise-dropdown-container" id="dropdown-container-blok">
+        <div class="enterprise-dropdown-btn" onclick="toggleEnterpriseDropdown('dropdown-container-blok')">
+          <span id="selected-label-blok">Semua Blok</span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+        <div class="enterprise-popup-list" id="popup-list-blok">
+          <div class="popup-list-item selected" onclick="selectEnterpriseOption('blok', 'ALL', 'Semua Blok')">Semua Blok</div>
+        </div>
+      </div>
+      <input type="hidden" id="select-blok" value="ALL">
+    </div>
   </div>
-  <div class="form-group">
-    <label>Estate</label>
-    <select class="form-select" id="filter-estate"><option>Semua Estate</option></select>
-  </div>
-  <div class="form-group">
-    <label>Divisi</label>
-    <select class="form-select" id="filter-divisi"><option>Semua Divisi</option></select>
-  </div>
-  <div class="form-group">
-    <label>Blok</label>
-    <select class="form-select" id="filter-blok"><option>Semua Blok</option></select>
+
+  <div class="filter-ui-footer">
+    <button class="btn-filter-reset" onclick="resetFilterUI()">Reset</button>
+    <button class="btn-filter-apply" onclick="terapkanFilterUI()">Terapkan Filter</button>
   </div>
 </div>
 
-<!-- Side Sheet Modal: Layer Map -->
-<div id="layer-modal" class="modal-side-sheet">
-  <div class="modal-header">
-    <h3>Layer Map</h3>
-    <button class="close-btn" onclick="toggleSideModal('layer-modal')">×</button>
+<div id="layer-modal" class="modal-side-sheet" style="padding: 16px;">
+  <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid #f1f5f9;">
+    <h3 style="margin:0; font-size:15px; font-weight:700;">Layer Map</h3>
+    <button class="close-btn" onclick="toggleSideModal('layer-modal')" style="background:none; border:none; font-size:18px; color:#94a3b8; cursor:pointer;">×</button>
   </div>
-  <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-top: 10px;">JENIS PETA</label>
+  <label style="font-size: 11px; font-weight: 700; color: #64748b; margin-top: 12px; display:block;">JENIS PETA</label>
+  
   <div class="basemap-grid-container">
     <input type="radio" id="bm-satelit" name="basemap-select" class="google-card-input" value="satelit" checked onchange="changeBaseMap(this.value)">
-    <label for="bm-satelit" class="google-maps-card">
-      <div class="google-thumbnail" style="background-image: url('https://mt1.google.com/vt/lyrs=s&x=1620&y=1043&z=11');"></div>
-      <span class="google-label-text">Satellite</span>
+    <label for="bm-satelit" class="basemap-card">
+      <div class="basemap-thumb" style="background-image: url('https://mt1.google.com/vt/lyrs=s&x=1620&y=1043&z=11');"></div>
+      <div class="basemap-info">
+        <span class="basemap-title">🛰️ Satellite</span>
+      </div>
     </label>
+
     <input type="radio" id="bm-default" name="basemap-select" class="google-card-input" value="default" onchange="changeBaseMap(this.value)">
-    <label for="bm-default" class="google-maps-card">
-      <div class="google-thumbnail" style="background-image: url('https://mt1.google.com/vt/lyrs=m&x=1620&y=1043&z=11');"></div>
-      <span class="google-label-text">Street</span>
+    <label for="bm-default" class="basemap-card">
+      <div class="basemap-thumb" style="background-image: url('https://mt1.google.com/vt/lyrs=m&x=1620&y=1043&z=11');"></div>
+      <div class="basemap-info">
+        <span class="basemap-title">🗺️ Street Map</span>
+      </div>
     </label>
+
     <input type="radio" id="bm-medan" name="basemap-select" class="google-card-input" value="medan" onchange="changeBaseMap(this.value)">
-    <label for="bm-medan" class="google-maps-card">
-      <div class="google-thumbnail" style="background-image: url('https://mt1.google.com/vt/lyrs=p&x=1620&y=1043&z=11');"></div>
-      <span class="google-label-text">Terrain</span>
+    <label for="bm-medan" class="basemap-card">
+      <div class="basemap-thumb" style="background-image: url('https://mt1.google.com/vt/lyrs=p&x=1620&y=1043&z=11');"></div>
+      <div class="basemap-info">
+        <span class="basemap-title">⛰️ Terrain</span>
+      </div>
+    </label>
+
+    <input type="radio" id="bm-hybrid" name="basemap-select" class="google-card-input" value="hybrid" onchange="changeBaseMap(this.value)">
+    <label for="bm-hybrid" class="basemap-card">
+      <div class="basemap-thumb" style="background-image: url('https://mt1.google.com/vt/lyrs=y&x=1620&y=1043&z=11');"></div>
+      <div class="basemap-info">
+        <span class="basemap-title">🛰️ Hybrid</span>
+      </div>
     </label>
   </div>
 </div>
 
-<!-- Bottom Sheet Atribut Info -->
 <div id="bottom-attribute-panel">
-  <div class="bottom-sheet-drag"></div>
+  <div class="bottom-sheet-drag" onclick="tutupPanelAtribut()"></div>
   <div class="panel-card-header">
     <div>
-      <h3 class="station-title" id="panel-station-name">LCWL-015</h3>
-      <div class="station-subtitle" id="panel-station-sub">Estate A • Divisi 03 • Blok F12</div>
+      <h3 class="station-title" id="panel-station-name">-</h3>
+      <div class="station-subtitle" id="panel-station-sub">-</div>
     </div>
-    <span class="status-tag bahaya" id="panel-status-tag">BAHAYA</span>
+    <span class="status-tag offline" id="panel-status-tag">OFFLINE</span>
   </div>
-
   <div class="metrics-grid">
     <div class="metric-box">
       <div class="metric-label">TMA</div>
-      <div class="metric-val" id="metric-tma" style="color: var(--danger);">285 cm</div>
+      <div class="metric-val" id="metric-tma">-</div>
     </div>
     <div class="metric-box">
       <div class="metric-label">Elevasi</div>
-      <div class="metric-val" id="metric-elevasi">12.35 m</div>
+      <div class="metric-val" id="metric-elevasi">-</div>
     </div>
     <div class="metric-box">
       <div class="metric-label">Perubahan</div>
-      <div class="metric-val" id="metric-perubahan" style="color: var(--danger);">+4.2 cm/jam ↗</div>
+      <div class="metric-val" id="metric-perubahan">-</div>
     </div>
   </div>
-
   <div class="sub-metrics-grid">
     <div class="sub-metric-box">
       <div style="color: #94a3b8; font-size: 9px; font-weight:700;">TREND</div>
-      <div style="font-weight:700; margin-top:2px;" id="metric-trend">↗ Naik</div>
+      <div style="font-weight:700; margin-top:2px;" id="metric-trend">-</div>
     </div>
     <div class="sub-metric-box">
       <div style="color: #94a3b8; font-size: 9px; font-weight:700;">FORECAST</div>
-      <div style="font-weight:700; margin-top:2px;" id="metric-forecast">45 menit</div>
+      <div style="font-weight:700; margin-top:2px;" id="metric-forecast">-</div>
     </div>
   </div>
-
-  <div style="font-size: 10px; color: #94a3b8; text-align: center;" id="panel-updated-at">Update: 14 Agu 2026 12:42 WIB</div>
-
-  <div id="route-inputs-container">
-    <div class="route-input-group">
-      <label><i class="fa-solid fa-circle-dot" style="color:var(--primary);"></i> Awal:</label>
-      <input type="text" id="route-start-input" placeholder="Lokasi awal...">
-    </div>
-    <div class="route-input-group">
-      <label><i class="fa-solid fa-location-dot" style="color:var(--danger);"></i> Tujuan:</label>
-      <input type="text" id="route-dest-input" placeholder="Tujuan...">
-    </div>
-  </div>
-
+  <div style="font-size: 10px; color: #94a3b8; text-align: center;" id="panel-updated-at">Update: -</div>
   <div class="bottom-action-row">
     <button class="action-btn btn-outline" onclick="toggleTableDetails()"><i class="fa-solid fa-table"></i> Lihat Detail</button>
     <button class="action-btn btn-primary" id="btn-maps-route"><i class="fa-solid fa-location-arrow"></i> Navigasi</button>
     <button class="action-btn btn-outline" style="max-width: 44px;" onclick="jalankanFiturShare()"><i class="fa-solid fa-share-nodes"></i></button>
   </div>
-
   <div class="table-responsive-container" id="scroll-table-container">
     <table class="grid-table">
       <thead>
-        <tr>
-          <th>Device ID</th><th>Nama Titik</th><th>PSM</th><th>Estate</th><th>Divisi</th><th>Blok</th><th>Status</th>
-          <th>Latitude</th><th>Longitude</th><th>T. Muka Air</th><th>E. Muka Air</th><th>Jarak Sensor</th>
-          <th>Kecepatan</th><th>Perubahan</th><th>Time Forecast</th><th>Created At</th>
-        </tr>
+        <tr><th>Device ID</th><th>Nama Titik</th><th>PSM</th><th>Estate</th><th>Divisi</th><th>Blok</th><th>Status</th><th>Latitude</th><th>Longitude</th><th>T. Muka Air</th><th>E. Muka Air</th><th>Jarak Sensor</th><th>Kecepatan</th><th>Perubahan</th><th>Time Forecast</th><th>Created At</th></tr>
       </thead>
       <tbody id="panel-table-body"></tbody>
     </table>
   </div>
 </div>
-
-<div id="map"></div>
-<div id="debug-panel"><div id="debug-text"></div></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
@@ -683,37 +1472,31 @@ body, html {
 const SPREADSHEET_ID = "12YVGi7-rCuTd1n2G8ZRA5GYo79RuznWvq1m2iyPb4OQ";
 const SHEET_GID = "1499191826";
 
-const KECEPATAN_JALAN = {
-  jalan_tanah_buruk: 15, jalan_tanah_sedang: 20, jalan_tanah_baik: 30,
-  jalan_kebun_buruk: 20, jalan_kebun_sedang: 30, jalan_kebun_baik: 40,
-  jalan_kerikil: 35, jalan_aspal_desa: 40, jalan_aspal_kabupaten: 50,
-  jalan_aspal_provinsi: 60, jalan_nasional: 70, jalan_tol: 90
-};
-
-var map = L.map('map', {
-  zoomControl: false,
-  minZoom: 3,
-  worldCopyJump: true,
-  maxBounds: [[-90, -180], [90, 180]],
-  maxBoundsViscosity: 1.0
-}).setView([0, 0], 3);
+var map = L.map('map', { zoomControl: false, minZoom: 3, worldCopyJump: true }).setView([0, 0], 3);
 
 let isFirstLoad = true;
 let currentCloudData = null;
-let selectedStatusFilter = "ALL";
+let activeMarker = null;
+
+let watchPositionId = null;
+let isTrackingActive = false;
+let userTrailCoordinates = [];
+let userTrailPolyline = null;
 var currentPositionUser = null;
-let internalRoutingControl = null;
-let currentDestinationLat = null;
-let currentDestinationLng = null;
-let isNavigatingActive = false;
-let dataRefreshInterval = null;
-let teksDisiapkanUntukShare = "";
+let statusChartInstance = null;
 
 var googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { attribution: '© Google Satellite' }).addTo(map);
 var googleDefault = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { attribution: '© Google Streets' });
 var googleMedan = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', { attribution: '© Google Terrain' });
+var googleHybrid = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { attribution: '© Google Hybrid' });
 
-const baseLayers = { 'satelit': googleSatellite, 'default': googleDefault, 'medan': googleMedan };
+const baseLayers = { 
+  'satelit': googleSatellite, 
+  'default': googleDefault, 
+  'medan': googleMedan,
+  'hybrid': googleHybrid
+};
+
 var markerGroup = L.layerGroup().addTo(map);
 
 map.createPane('userGpsPane');
@@ -721,80 +1504,112 @@ map.getPane('userGpsPane').style.zIndex = 650;
 map.getPane('userGpsPane').style.pointerEvents = 'none';
 var userLocationLayer = L.layerGroup([], { pane: 'userGpsPane' }).addTo(map);
 
+function switchView(viewId, element) {
+  document.querySelectorAll('.view-page').forEach(page => page.classList.remove('active-view'));
+  document.getElementById(viewId).classList.add('active-view');
+  
+  document.querySelectorAll('.drawer-menu-item').forEach(nav => nav.classList.remove('active-menu'));
+  if (element) element.classList.add('active-menu');
+
+  if (viewId === 'map-view') {
+    setTimeout(() => map.invalidateSize(), 200);
+  } else if (viewId === 'dashboard-view') {
+    updateDashboardUI();
+  }
+  closeDrawer();
+}
+
+function updateNetworkStatus() {
+  const badge = document.getElementById('live-badge-status');
+  const text = document.getElementById('live-status-text');
+  if (navigator.onLine) {
+    badge.className = 'live-badge is-online';
+    text.innerText = 'LIVE';
+  } else {
+    badge.className = 'live-badge is-offline';
+    text.innerText = 'OFFLINE';
+  }
+}
+
+window.addEventListener('online', () => { updateNetworkStatus(); showToast("Koneksi terhubung kembali"); fetchOnlineData(); });
+window.addEventListener('offline', () => { updateNetworkStatus(); showToast("Koneksi terputus (Offline)"); });
+document.addEventListener('DOMContentLoaded', updateNetworkStatus);
+
 function showToast(pesan) {
   const toast = document.createElement('div');
   toast.className = 'custom-toast';
   toast.innerText = pesan;
   document.body.appendChild(toast);
   setTimeout(() => toast.classList.add('show'), 50);
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 300);
-  }, 2500);
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 2500);
 }
 
-function toggleSideModal(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.classList.toggle('active');
+function closeDrawer() { const toggle = document.getElementById('menu-toggle'); if (toggle) toggle.checked = false; }
+function toggleSideModal(id) { const modal = document.getElementById(id); if (modal) modal.classList.toggle('active'); }
+function toggleTableDetails() { const container = document.getElementById('scroll-table-container'); if (container) container.style.display = (container.style.display === 'block') ? 'none' : 'block'; }
+function changeBaseMap(layerKey) { for (let key in baseLayers) { if (map.hasLayer(baseLayers[key])) map.removeLayer(baseLayers[key]); } if (baseLayers[layerKey]) baseLayers[layerKey].addTo(map); }
+
+function toggleEnterpriseDropdown(containerId) {
+  const container = document.getElementById(containerId);
+  document.querySelectorAll('.enterprise-dropdown-container').forEach(el => {
+    if (el.id !== containerId) el.classList.remove('active');
+  });
+  container.classList.toggle('active');
 }
 
-function toggleTableDetails() {
-  const container = document.getElementById('scroll-table-container');
-  if (container) {
-    container.style.display = container.style.display === 'block' ? 'none' : 'block';
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.enterprise-dropdown-container')) {
+    document.querySelectorAll('.enterprise-dropdown-container').forEach(el => {
+      el.classList.remove('active');
+    });
   }
-}
+});
 
-function changeBaseMap(layerKey) {
-  for (let key in baseLayers) {
-    if (map.hasLayer(baseLayers[key])) map.removeLayer(baseLayers[key]);
-  }
-  if (baseLayers[layerKey]) baseLayers[layerKey].addTo(map);
-}
+function selectEnterpriseOption(type, value, label) {
+  document.getElementById(`select-${type}`).value = value;
+  document.getElementById(`selected-label-${type}`).innerText = label;
+  document.getElementById(`dropdown-container-${type}`).classList.remove('active');
 
-function setQuickStatusFilter(statusValue) {
-  selectedStatusFilter = statusValue;
-  applySmartFilter();
+  const listContainer = document.getElementById(`popup-list-${type}`);
+  listContainer.querySelectorAll('.popup-list-item').forEach(item => {
+    item.classList.remove('selected');
+    if (item.getAttribute('onclick').includes(`'${value}'`)) {
+      item.classList.add('selected');
+    }
+  });
 }
 
 function parseToValidCoord(valRaw, isLongitude) {
-  if (!valRaw && valRaw !== 0) return null;
-  let cleanStr = valRaw.toString().replace(/\s/g, '');
-  if (cleanStr.includes(',') && !cleanStr.includes('.')) {
-    cleanStr = cleanStr.replace(/,/g, '.');
-  } else if (cleanStr.includes('.') && cleanStr.includes(',')) {
-    cleanStr = cleanStr.replace(/\./g, '').replace(/,/g, '.');
-  }
+  if (valRaw === null || valRaw === undefined || valRaw === "") return null;
+  let cleanStr = valRaw.toString().trim().replace(/\s/g, '');
+  if (cleanStr.includes(',') && !cleanStr.includes('.')) { cleanStr = cleanStr.replace(/,/g, '.'); } else if (cleanStr.includes('.') && cleanStr.includes(',')) { cleanStr = cleanStr.replace(/\./g, '').replace(/,/g, '.'); }
   let num = parseFloat(cleanStr);
   if (isNaN(num)) return null;
-  if (isLongitude) { if (num > 180) { while (num > 180) num = num / 10; } }
-  else { if (num < -90) { while (num < -90) num = num / 10; } }
+  if (isLongitude) { while (Math.abs(num) > 180) num = num / 10; } else { while (Math.abs(num) > 90) num = num / 10; }
   return num;
 }
 
-function dapatkanObjekWaktu(rawDateStr) {
-  if (!rawDateStr) return null;
-  let dObj = new Date(rawDateStr);
-  return isNaN(dObj.getTime()) ? null : dObj;
-}
-
-function getValByKey(dataObj, keyName) {
-  const target = keyName.toLowerCase().trim();
-  for (let key in dataObj) {
-    if (key.toLowerCase().trim() === target) {
-      return dataObj[key] !== null && dataObj[key] !== undefined ? dataObj[key] : "";
-    }
+function parseCustomDate(str) {
+  if (!str) return null;
+  let d = new Date(str);
+  if (!isNaN(d.getTime())) return d;
+  const parts = str.toString().trim().split(' ');
+  if (parts.length >= 2) {
+    const dateParts = parts[0].split('/');
+    const timeParts = parts[1].split(':');
+    if (dateParts.length === 3 && timeParts.length >= 2) { return new Date(parseInt(dateParts[2]), parseInt(dateParts[1]) - 1, parseInt(dateParts[0]), parseInt(timeParts[0]), parseInt(timeParts[1]), timeParts[2] ? parseInt(timeParts[2]) : 0); }
   }
-  return "";
+  return null;
 }
 
 function formatWaktuIndo(rawDateStr) {
-  let dateObj = dapatkanObjekWaktu(rawDateStr);
-  if (!dateObj) return rawDateStr || "Baru Saja";
-  return dateObj.toLocaleString('id-ID');
+  if (!rawDateStr) return "-";
+  let dateObj = parseCustomDate(rawDateStr);
+  return (dateObj && !isNaN(dateObj.getTime())) ? dateObj.toLocaleString('id-ID') : rawDateStr;
 }
 
 function fetchOnlineData() {
+  if (!navigator.onLine) return;
   const oldScript = document.getElementById('google-sheet-trigger');
   if (oldScript) oldScript.remove();
   const nocache = new Date().getTime();
@@ -807,151 +1622,397 @@ function fetchOnlineData() {
 
 function processCloudData(response) {
   if (!response || !response.table || !response.table.rows || response.table.rows.length === 0) return;
-  const headers = response.table.cols.map(col => (col ? col.label || "" : "").toLowerCase().trim());
-  const rowValues = response.table.rows[0].c;
+  const cols = response.table.cols || [];
+  const rowValues = response.table.rows[0].c || [];
   const dataAlat = {};
-  headers.forEach((headerName, index) => {
-    if (headerName && rowValues && rowValues[index]) {
-      dataAlat[headerName] = rowValues[index].f ? rowValues[index].f : (rowValues[index].v !== null && rowValues[index].v !== undefined ? rowValues[index].v : "");
+  cols.forEach((col, index) => {
+    if (col && col.label) {
+      const cleanHeader = col.label.toString().toLowerCase().trim();
+      let val = "";
+      if (rowValues[index]) { val = rowValues[index].f ? rowValues[index].f : (rowValues[index].v !== null && rowValues[index].v !== undefined ? rowValues[index].v : ""); }
+      dataAlat[cleanHeader] = val.toString().trim();
     }
   });
 
+  let statusAkhir = dataAlat["status"] ? dataAlat["status"].toUpperCase() : "OFFLINE";
+  const rawCreatedAt = dataAlat["created_at"];
+  if (rawCreatedAt) {
+    const parsedDate = parseCustomDate(rawCreatedAt);
+    if (parsedDate) {
+      const lastUpdate = parsedDate.getTime();
+      const now = new Date().getTime();
+      const ONE_HOUR_MS = 60 * 60 * 1000;
+      if ((now - lastUpdate) > ONE_HOUR_MS) statusAkhir = "OFFLINE";
+    } else statusAkhir = "OFFLINE";
+  } else statusAkhir = "OFFLINE";
+
+  const rawTma = parseFloat(dataAlat["tinggi_muka_air"]);
+  const smoothedTma = !isNaN(rawTma) ? Math.round(rawTma * 10) / 10 : dataAlat["tinggi_muka_air"] || "-";
+
   currentCloudData = {
-    device_id: getValByKey(dataAlat, "device_id") || "LCWL-015",
-    nama_titik: getValByKey(dataAlat, "nama_titik") || "LCWL-015",
-    psm: getValByKey(dataAlat, "psm"),
-    estate: getValByKey(dataAlat, "estate") || "Estate A",
-    divisi: getValByKey(dataAlat, "divisi") || "Divisi 03",
-    blok: getValByKey(dataAlat, "blok") || "Blok F12",
-    status: getValByKey(dataAlat, "status") || "BAHAYA",
-    latitude: getValByKey(dataAlat, "latitude"),
-    longitude: getValByKey(dataAlat, "longitude"),
-    tinggi_muka_air: getValByKey(dataAlat, "tinggi_muka_air") || "285",
-    elevasi_muka_air: getValByKey(dataAlat, "elevasi_muka_air") || "12.35",
-    jarak: getValByKey(dataAlat, "jarak"),
-    kecepatan: getValByKey(dataAlat, "kecepatan") || "+4.2",
-    kategori_perubahan: getValByKey(dataAlat, "kategori_perubahan") || "Naik",
-    time_forecast: getValByKey(dataAlat, "time_forecast") || "45 menit",
-    created_at: getValByKey(dataAlat, "created_at")
+    device_id: dataAlat["device_id"] || "-",
+    nama_titik: dataAlat["nama_titik"] || "-",
+    psm: dataAlat["psm"] || "-",
+    estate: dataAlat["estate"] || "-",
+    divisi: dataAlat["divisi"] || "-",
+    blok: dataAlat["blok"] || "-",
+    status: statusAkhir,
+    latitude: dataAlat["latitude"] || null,
+    longitude: dataAlat["longitude"] || null,
+    tinggi_muka_air: smoothedTma,
+    elevasi_muka_air: dataAlat["elevasi_muka_air"] || "-",
+    jarak: dataAlat["jarak"] || "-",
+    kecepatan: dataAlat["kecepatan"] || "-",
+    kategori_perubahan: dataAlat["kategori_perubahan"] || "-",
+    time_forecast: dataAlat["time_forecast"] || "-",
+    created_at: rawCreatedAt || "-"
   };
 
+  populateEnterpriseDropdowns(currentCloudData);
   applySmartFilter();
+  updateDashboardUI();
+
   const splash = document.getElementById('splash-screen');
-  if (splash) {
-    splash.style.opacity = '0';
-    setTimeout(() => splash.remove(), 500);
+  if (splash) { splash.style.opacity = '0'; setTimeout(() => splash.remove(), 500); }
+}
+
+function updateDashboardUI() {
+  if (!currentCloudData) return;
+  const attr = currentCloudData;
+
+  let total = 1;
+  let aman = attr.status.includes("AMAN") ? 1 : 0;
+  let waspada = attr.status.includes("WASPADA") ? 1 : 0;
+  let bahaya = attr.status.includes("BAHAYA") ? 1 : 0;
+  let offline = attr.status.includes("OFFLINE") ? 1 : 0;
+
+  document.getElementById('dash-total-val').innerText = total;
+  document.getElementById('dash-aman-val').innerText = aman;
+  document.getElementById('dash-waspada-val').innerText = waspada;
+  document.getElementById('dash-bahaya-val').innerText = bahaya;
+  document.getElementById('dash-offline-val').innerText = offline;
+
+  document.getElementById('dash-aman-sub').innerText = `${Math.round((aman/total)*100)}% dari total`;
+  document.getElementById('dash-waspada-sub').innerText = `${Math.round((waspada/total)*100)}% dari total`;
+  document.getElementById('dash-bahaya-sub').innerText = `${Math.round((bahaya/total)*100)}% dari total`;
+  document.getElementById('dash-offline-sub').innerText = `${Math.round((offline/total)*100)}% dari total`;
+
+  document.getElementById('chart-center-val').innerText = total;
+  document.getElementById('leg-aman').innerText = aman;
+  document.getElementById('leg-waspada').innerText = waspada;
+  document.getElementById('leg-bahaya').innerText = bahaya;
+  document.getElementById('leg-offline').innerText = offline;
+
+  document.getElementById('dash-time-indicator').innerText = formatWaktuIndo(attr.created_at);
+
+  document.getElementById('dash-avg-tma').innerText = attr.tinggi_muka_air !== "-" ? `${attr.tinggi_muka_air} cm` : "-";
+  document.getElementById('dash-max-tma').innerText = attr.tinggi_muka_air !== "-" ? `${attr.tinggi_muka_air} cm` : "-";
+  document.getElementById('dash-max-device').innerText = attr.device_id;
+  document.getElementById('dash-min-tma').innerText = attr.tinggi_muka_air !== "-" ? `${attr.tinggi_muka_air} cm` : "-";
+  document.getElementById('dash-min-device').innerText = attr.device_id;
+  document.getElementById('dash-speed-tma').innerText = attr.kecepatan !== "-" ? `${attr.kecepatan} cm/jam` : "-";
+
+  const alertTbody = document.getElementById('dash-alert-tbody');
+  alertTbody.innerHTML = `
+    <tr>
+      <td><b style="color:#0052cc;">${attr.device_id}</b></td>
+      <td>${attr.estate} / ${attr.divisi} Blok ${attr.blok}</td>
+      <td><span class="status-badge-sm ${attr.status.toLowerCase()}">${attr.status}</span></td>
+      <td><b style="color:${attr.status === 'BAHAYA' ? '#dc2626' : '#0f172a'};">${attr.tinggi_muka_air} cm</b></td>
+      <td>${formatWaktuIndo(attr.created_at)}</td>
+    </tr>
+  `;
+
+  renderDonutChart(aman, waspada, bahaya, offline);
+}
+
+function renderDonutChart(aman, waspada, bahaya, offline) {
+  const ctx = document.getElementById('statusDonutChart').getContext('2d');
+  if (statusChartInstance) statusChartInstance.destroy();
+
+  statusChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Aman', 'Waspada', 'Bahaya', 'Offline'],
+      datasets: [{
+        data: [aman, waspada, bahaya, offline],
+        backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#94a3b8'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      cutout: '75%',
+      plugins: { legend: { display: false } },
+      responsive: true,
+      maintainAspectRatio: true
+    }
+  });
+}
+
+function populateEnterpriseDropdowns(data) {
+  appendPopupOption('psm', data.psm, 'Semua PSM');
+  appendPopupOption('estate', data.estate, 'Semua Estate');
+  appendPopupOption('divisi', data.divisi, 'Semua Divisi');
+  appendPopupOption('blok', data.blok, 'Semua Blok');
+}
+
+function appendPopupOption(type, val, defaultText) {
+  if (!val || val === "-") return;
+  const listContainer = document.getElementById(`popup-list-${type}`);
+  let exists = false;
+  listContainer.querySelectorAll('.popup-list-item').forEach(item => {
+    if (item.getAttribute('onclick').includes(`'${val}'`)) exists = true;
+  });
+
+  if (!exists) {
+    const div = document.createElement('div');
+    div.className = 'popup-list-item';
+    div.setAttribute('onclick', `selectEnterpriseOption('${type}', '${val}', '${val}')`);
+    div.innerText = val;
+    listContainer.appendChild(div);
   }
+}
+
+function setQuickStatusFilter(statusVal) {
+  document.getElementById('chk-aman').checked = (statusVal === 'ALL' || statusVal === 'AMAN' || statusVal === 'ONLINE');
+  document.getElementById('chk-waspada').checked = (statusVal === 'ALL' || statusVal === 'WASPADA' || statusVal === 'ONLINE');
+  document.getElementById('chk-bahaya').checked = (statusVal === 'ALL' || statusVal === 'BAHAYA' || statusVal === 'ONLINE');
+  document.getElementById('chk-offline').checked = (statusVal === 'ALL' || statusVal === 'OFFLINE');
+
+  applySmartFilter();
+}
+
+function resetFilterUI() {
+  const resetBtn = document.querySelector('.btn-filter-reset');
+  if (resetBtn) {
+    resetBtn.classList.add('active-clicked');
+    setTimeout(() => resetBtn.classList.remove('active-clicked'), 300);
+  }
+
+  const applyBtn = document.querySelector('.btn-filter-apply');
+  if (applyBtn) {
+    applyBtn.classList.remove('is-clicked');
+  }
+
+  document.getElementById('chk-aman').checked = true;
+  document.getElementById('chk-waspada').checked = true;
+  document.getElementById('chk-bahaya').checked = true;
+  document.getElementById('chk-offline').checked = true;
+
+  selectEnterpriseOption('psm', 'ALL', 'Semua PSM');
+  selectEnterpriseOption('estate', 'ALL', 'Semua Estate');
+  selectEnterpriseOption('divisi', 'ALL', 'Semua Divisi');
+  selectEnterpriseOption('blok', 'ALL', 'Semua Blok');
+
+  document.getElementById('filter-search').value = "";
+  applySmartFilter();
+  showToast("Filter berhasil di-reset");
+}
+
+function terapkanFilterUI() {
+  const applyBtn = document.querySelector('.btn-filter-apply');
+  if (applyBtn) {
+    applyBtn.classList.add('is-clicked');
+  }
+
+  applySmartFilter();
+  toggleSideModal('filter-modal');
+  showToast("Filter telah diterapkan");
 }
 
 function applySmartFilter() {
   if (!currentCloudData) return;
   const attr = currentCloudData;
   const keyword = document.getElementById('filter-search').value.toUpperCase().trim();
-  const statusStr = (attr.status || "").toString().toUpperCase();
+  const statusStr = attr.status;
 
-  // Update Counters
   document.getElementById('count-aman').innerText = statusStr.includes("AMAN") ? "1" : "0";
   document.getElementById('count-waspada').innerText = statusStr.includes("WASPADA") ? "1" : "0";
   document.getElementById('count-bahaya').innerText = statusStr.includes("BAHAYA") ? "1" : "0";
+  document.getElementById('count-online').innerText = statusStr.includes("ONLINE") || statusStr !== "OFFLINE" ? "1" : "0";
   document.getElementById('count-offline').innerText = statusStr.includes("OFFLINE") ? "1" : "0";
 
   let lolosFilter = true;
+
   if (keyword !== "" && !JSON.stringify(attr).toUpperCase().includes(keyword)) lolosFilter = false;
-  if (selectedStatusFilter !== "ALL" && !statusStr.includes(selectedStatusFilter)) lolosFilter = false;
 
-  if (lolosFilter && attr.latitude && attr.longitude) {
-    const lat = parseToValidCoord(attr.latitude, false);
-    const lng = parseToValidCoord(attr.longitude, true);
+  const chkAman = document.getElementById('chk-aman').checked;
+  const chkWaspada = document.getElementById('chk-waspada').checked;
+  const chkBahaya = document.getElementById('chk-bahaya').checked;
+  const chkOffline = document.getElementById('chk-offline').checked;
 
-    if (lat !== null && lng !== null) {
-      markerGroup.clearLayers();
-      let warnaMarker = "#16a34a";
-      if (statusStr.includes("WASPADA")) warnaMarker = "#d97706";
-      if (statusStr.includes("BAHAYA")) warnaMarker = "#dc2626";
-      if (statusStr.includes("OFFLINE")) warnaMarker = "#64748b";
+  let matchesStatus = false;
+  if (chkAman && statusStr.includes("AMAN")) matchesStatus = true;
+  if (chkWaspada && statusStr.includes("WASPADA")) matchesStatus = true;
+  if (chkBahaya && statusStr.includes("BAHAYA")) matchesStatus = true;
+  if (chkOffline && statusStr.includes("OFFLINE")) matchesStatus = true;
 
-      var radarIcon = L.divIcon({
-        className: 'radar-marker-wrapper',
-        html: `<div class="radar-marker-element" style="background-color: ${warnaMarker};"></div>`,
-        iconSize: [16, 16],
-        iconAnchor: [8, 8]
-      });
+  if (!matchesStatus) lolosFilter = false;
 
-      var liveMarker = L.marker([lat, lng], { icon: radarIcon }).addTo(markerGroup);
-      liveMarker.on('click', () => showStationDetails(attr, lat, lng, warnaMarker));
+  const selectedPsm = document.getElementById('select-psm').value;
+  const selectedEstate = document.getElementById('select-estate').value;
+  const selectedDivisi = document.getElementById('select-divisi').value;
+  const selectedBlok = document.getElementById('select-blok').value;
 
-      if (isFirstLoad) {
-        map.setView([lat, lng], 14);
-        isFirstLoad = false;
-      }
-    }
-  } else {
-    markerGroup.clearLayers();
-  }
+  if (selectedPsm !== "ALL" && attr.psm !== selectedPsm) lolosFilter = false;
+  if (selectedEstate !== "ALL" && attr.estate !== selectedEstate) lolosFilter = false;
+  if (selectedDivisi !== "ALL" && attr.divisi !== selectedDivisi) lolosFilter = false;
+  if (selectedBlok !== "ALL" && attr.blok !== selectedBlok) lolosFilter = false;
+
+  const lat = parseToValidCoord(attr.latitude, false);
+  const lng = parseToValidCoord(attr.longitude, true);
+
+  if (lolosFilter && lat !== null && lng !== null) {
+    let warnaMarker = "#64748b";
+    if (statusStr.includes("AMAN")) warnaMarker = "#22c55e";
+    else if (statusStr.includes("WASPADA")) warnaMarker = "#eab308";
+    else if (statusStr.includes("BAHAYA")) warnaMarker = "#ef4444";
+    else if (statusStr.includes("ONLINE")) warnaMarker = "#0284c7";
+
+    var radarIcon = L.divIcon({ className: 'radar-marker-wrapper', html: `<div class="radar-marker-element" style="background-color: ${warnaMarker};"></div>`, iconSize: [16, 16], iconAnchor: [8, 8] });
+    if (!activeMarker) { activeMarker = L.marker([lat, lng], { icon: radarIcon }).addTo(markerGroup); activeMarker.on('click', () => showStationDetails(attr, lat, lng, warnaMarker)); }
+    else { activeMarker.setLatLng([lat, lng]); activeMarker.setIcon(radarIcon); }
+    if (isFirstLoad) { map.setView([lat, lng], 14); isFirstLoad = false; }
+    if (document.getElementById('bottom-attribute-panel').classList.contains('active')) showStationDetails(attr, lat, lng, warnaMarker);
+  } else { markerGroup.clearLayers(); activeMarker = null; }
 }
 
 function showStationDetails(attr, lat, lng, warnaMarker) {
   document.getElementById('panel-station-name').innerText = attr.nama_titik;
-  document.getElementById('panel-station-sub').innerText = `${attr.estate} • ${attr.divisi} • ${attr.blok}`;
-  
+  document.getElementById('panel-station-sub').innerText = `${attr.psm} • ${attr.estate} • ${attr.divisi} • ${attr.blok}`;
   const statusTag = document.getElementById('panel-status-tag');
   statusTag.innerText = attr.status;
   statusTag.className = `status-tag ${attr.status.toLowerCase()}`;
-
-  document.getElementById('metric-tma').innerText = `${attr.tinggi_muka_air} cm`;
-  document.getElementById('metric-elevasi').innerText = `${attr.elevasi_muka_air} m`;
-  document.getElementById('metric-perubahan').innerText = `${attr.kecepatan} cm/jam ↗`;
-  document.getElementById('metric-trend').innerText = `↗ ${attr.kategori_perubahan}`;
+  const tmaElem = document.getElementById('metric-tma');
+  tmaElem.innerText = attr.tinggi_muka_air !== "-" ? `${attr.tinggi_muka_air} cm` : "-";
+  tmaElem.style.color = warnaMarker;
+  document.getElementById('metric-elevasi').innerText = attr.elevasi_muka_air !== "-" ? `${attr.elevasi_muka_air} m` : "-";
+  const perubahanElem = document.getElementById('metric-perubahan');
+  perubahanElem.innerText = attr.kecepatan !== "-" ? `${attr.kecepatan} cm/jam` : "-";
+  perubahanElem.style.color = warnaMarker;
+  document.getElementById('metric-trend').innerText = attr.kategori_perubahan;
   document.getElementById('metric-forecast').innerText = attr.time_forecast;
   document.getElementById('panel-updated-at').innerText = `Update: ${formatWaktuIndo(attr.created_at)}`;
-
-  document.getElementById('panel-table-body').innerHTML = `
-    <tr>
-      <td>${attr.device_id}</td><td><b>${attr.nama_titik}</b></td><td>${attr.psm}</td><td>${attr.estate}</td>
-      <td>${attr.divisi}</td><td>${attr.blok}</td><td>${attr.status}</td><td>${lat}</td><td>${lng}</td>
-      <td>${attr.tinggi_muka_air}</td><td>${attr.elevasi_muka_air}</td><td>${attr.jarak}</td>
-      <td>${attr.kecepatan}</td><td>${attr.kategori_perubahan}</td><td>${attr.time_forecast}</td><td>${attr.created_at}</td>
-    </tr>`;
-
-  document.getElementById('btn-maps-route').onclick = function() {
-    prosesRuteJalanCustom({ lat: currentPositionUser ? currentPositionUser.lat : lat, lng: currentPositionUser ? currentPositionUser.lng : lng }, { lat, lng });
-  };
-
+  document.getElementById('panel-table-body').innerHTML = `<tr><td>${attr.device_id}</td><td><b>${attr.nama_titik}</b></td><td>${attr.psm}</td><td>${attr.estate}</td><td>${attr.divisi}</td><td>${attr.blok}</td><td>${attr.status}</td><td>${lat}</td><td>${lng}</td><td>${attr.tinggi_muka_air}</td><td>${attr.elevasi_muka_air}</td><td>${attr.jarak}</td><td>${attr.kecepatan}</td><td>${attr.kategori_perubahan}</td><td>${attr.time_forecast}</td><td>${attr.created_at}</td></tr>`;
+  document.getElementById('btn-maps-route').onclick = function() { window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank'); };
   document.getElementById('bottom-attribute-panel').classList.add('active');
 }
 
-function centerToUserGps() {
-  if (currentPositionUser) {
-    map.setView([currentPositionUser.lat, currentPositionUser.lng], 16);
-  } else {
-    showToast("Mencari lokasi GPS...");
+function centerToUserGps() { if (currentPositionUser) map.setView([currentPositionUser.lat, currentPositionUser.lng], 16); else showToast("Mencari lokasi GPS..."); }
+
+function updateUserLocation(lat, lng) {
+  currentPositionUser = { lat: lat, lng: lng };
+  userLocationLayer.clearLayers();
+  
+  L.circleMarker([lat, lng], {
+    radius: 7,
+    fillColor: '#0052cc',
+    color: '#ffffff',
+    weight: 3,
+    fillOpacity: 1
+  }).addTo(userLocationLayer);
+
+  if (isTrackingActive) {
+    const newPoint = [lat, lng];
+    const lastPoint = userTrailCoordinates[userTrailCoordinates.length - 1];
+
+    if (!lastPoint || lastPoint[0] !== lat || lastPoint[1] !== lng) {
+      userTrailCoordinates.push(newPoint);
+      if (!userTrailPolyline) {
+        userTrailPolyline = L.polyline(userTrailCoordinates, {
+          color: '#0052cc',
+          weight: 4,
+          opacity: 0.8,
+          dashArray: '6, 8',
+          lineCap: 'round'
+        }).addTo(userLocationLayer);
+      } else {
+        userTrailPolyline.setLatLngs(userTrailCoordinates);
+      }
+    }
   }
+}
+
+function toggleUserTracking() {
+  const btn = document.getElementById('btn-toggle-tracking');
+  if (!isTrackingActive) {
+    if (!navigator.geolocation) {
+      showToast("Geolocation tidak didukung browser ini.");
+      return;
+    }
+    isTrackingActive = true;
+    btn.classList.add('active-tracking');
+    showToast("Live Tracking & Pergerakan Aktif");
+
+    watchPositionId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        updateUserLocation(lat, lng);
+      },
+      (err) => {
+        showToast("Gagal mengambil lokasi: " + err.message);
+      },
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+    );
+  } else {
+    isTrackingActive = false;
+    btn.classList.remove('active-tracking');
+    if (watchPositionId !== null) {
+      navigator.geolocation.clearWatch(watchPositionId);
+      watchPositionId = null;
+    }
+    showToast("Live Tracking Dimatikan");
+  }
+}
+
+function padRight(str, length) {
+  return String(str).padEnd(length, ' ');
 }
 
 function jalankanFiturShare() {
   if (!currentCloudData) return;
-  const shareText = `LCWL 2.0 Monitoring\nStasiun: ${currentCloudData.nama_titik}\nStatus: ${currentCloudData.status}\nTMA: ${currentCloudData.tinggi_muka_air} cm`;
+  const lat = parseToValidCoord(currentCloudData.latitude, false) ?? "";
+  const lng = parseToValidCoord(currentCloudData.longitude, true) ?? "";
+  const statusTeksPesan = currentCloudData.status || "-";
+  const googleMapsLink = (lat && lng) ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}` : "-";
+
+  let shareText = `LCWL 2.0 | LOW COST WATER LEVEL\n\n` +
+                  `📍 *Informasi Lokasi*\n` +
+                  `\`${padRight("Nama Titik", 16)}: ${currentCloudData.nama_titik}\`\n` +
+                  `\`${padRight("Status", 16)}: ${statusTeksPesan}\`\n` +
+                  `\`${padRight("Tinggi Muka Air", 16)}: ${currentCloudData.tinggi_muka_air} cm\`\n` +
+                  `\`${padRight("Estate", 16)}: ${currentCloudData.estate}\`\n` +
+                  `\`${padRight("Blok", 16)}: ${currentCloudData.blok}\`\n` +
+                  `\`${padRight("Created At", 16)}: ${currentCloudData.created_at}\`\n\n` +
+                  `📌 *Koordinat GPS*\n` +
+                  `\`${padRight("Latitude", 16)}: ${lat}\`\n` +
+                  `\`${padRight("Longitude", 16)}: ${lng}\`\n\n` +
+                  `🌐 *Google Maps*\n` +
+                  `${googleMapsLink}\n\n` +
+                  `Pesan ini dibuat secara otomatis oleh LCWL 2.0.`;
+
   if (navigator.share) {
-    navigator.share({ title: 'LCWL 2.0', text: shareText });
+    navigator.share({ title: 'LCWL 2.0 - ' + currentCloudData.nama_titik, text: shareText }).catch(() => {});
   } else {
     navigator.clipboard.writeText(shareText);
-    showToast("Informasi berhasil disalin!");
+    showToast("Informasi atribut berhasil disalin ke clipboard!");
   }
 }
 
-function tutupPanelAtribut() {
-  document.getElementById('bottom-attribute-panel').classList.remove('active');
-}
+function tutupPanelAtribut() { document.getElementById('bottom-attribute-panel').classList.remove('active'); }
+map.on('click', function() { tutupPanelAtribut(); });
 
 map.locate({ setView: false, watch: true, enableHighAccuracy: true });
 map.on('locationfound', (e) => {
-  currentPositionUser = e.latlng;
-  userLocationLayer.clearLayers();
-  L.circleMarker(e.latlng, { radius: 6, fillColor: '#0052cc', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(userLocationLayer);
+  if (!isTrackingActive) {
+    updateUserLocation(e.latlng.lat, e.latlng.lng);
+  }
 });
 
 fetchOnlineData();
-dataRefreshInterval = setInterval(fetchOnlineData, 10000);
+setInterval(fetchOnlineData, 10000);
 </script>
 </body>
 </html>
