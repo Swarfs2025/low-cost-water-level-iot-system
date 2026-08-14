@@ -22,9 +22,7 @@ font-family: Arial, sans-serif;
 background-color: #000;
 overflow: hidden;
 }
-/* ==========================================================================
-DESAIN SPLASH SCREEN KUSTOM PREMIUM (MURNI TEKS & GRADASI MERAH)
-========================================================================= */
+
 #splash-screen {
 position: fixed;
 top: 0;
@@ -84,9 +82,7 @@ letter-spacing: 1px;
 from { opacity: 0; transform: translateY(10px); }
 to { opacity: 1; transform: translateY(0); }
 }
-/* ==========================================================================
-STRUKTUR PURE CSS HAMBURGER & CONTAINER MENU BERLAPIS
-========================================================================== */
+
 #menu-toggle {
 display: none;
 }
@@ -156,9 +152,7 @@ opacity: 0;
 #menu-toggle:checked ~ .hamburger-label span:nth-child(3) {
 transform: translateY(-7px) rotate(-45deg);
 }
-/* ==========================================================================
-UI: GLASSMORPHISM PANEL
-========================================================================= */
+
 #upload-panel {
 position: static;
 background: none;
@@ -199,11 +193,9 @@ flex-shrink: 0;
 #debug-panel { padding: 5px 8px; font-size: 10px; }
 .google-label-text { font-size: 9px !important; }
 .google-thumbnail { aspect-ratio: 1.4 / 1 !important; border-radius: 6px !important; }
-#bottom-attribute-panel { width: 100% !important; height: auto !important; max-height: 340px !important; border-radius: 0 !important; }
+#bottom-attribute-panel { width: 100% !important; height: auto !important; max-height: 380px !important; border-radius: 0 !important; }
 }
-/* ==========================================================================
-PANEL ATRIBUT BAWAH LAYAR NATIVE SCROLL
-========================================================================== */
+
 #bottom-attribute-panel {
 position: absolute;
 bottom: -450px;
@@ -212,7 +204,7 @@ transform: translateX(-50%);
 width: 100%;
 max-width: 950px;
 height: auto;
-max-height: 330px;
+max-height: 380px;
 background: rgba(255, 255, 255, 0.98);
 backdrop-filter: blur(15px);
 -webkit-backdrop-filter: blur(15px);
@@ -284,9 +276,39 @@ background: #fff;
 .grid-table tr:nth-child(even) td {
 background: #f9f9f9;
 }
-/* ==========================================================================
-PIL-SHAPE ACTION BAR MENJADI BIRU GOOGLE MAPS
-========================================================================= */
+
+/* CONTAINER INPUT RUTE TAMPIL SAAT 'MULAI' DIKLIK */
+#route-inputs-container {
+display: none;
+flex-direction: column;
+gap: 6px;
+background: #f1f3f4;
+padding: 8px 10px;
+border-radius: 8px;
+border: 1px solid #dadce0;
+margin-top: 4px;
+}
+.route-input-group {
+display: flex;
+align-items: center;
+gap: 6px;
+font-size: 11px;
+}
+.route-input-group label {
+width: 65px;
+font-weight: bold;
+color: #3c4043;
+}
+.route-input-group input {
+flex: 1;
+padding: 4px 8px;
+border: 1px solid #ccc;
+border-radius: 4px;
+font-size: 11px;
+background: #fff;
+color: #202124;
+}
+
 .navigation-action-bar {
 display: flex;
 flex-direction: column;
@@ -354,9 +376,7 @@ font-weight: bold;
 color: #1a73e8;
 margin-bottom: 2px;
 }
-/* ==========================================================================
-LAYOUT GRID JENIS PETA & DETAIL PETA
-========================================================================= */
+
 .basemap-grid-container, .detail-grid-container {
 display: grid;
 grid-template-columns: repeat(3, 1fr);
@@ -478,9 +498,7 @@ display: none;
 stroke: #1a73e8 !important;
 stroke-opacity: 0.90 !important;
 }
-/* ==========================================================================
-KUSTOM DIALOG MODAL SHARE BARU
-========================================================================== */
+
 .custom-share-modal {
 display: none;
 position: fixed;
@@ -554,9 +572,6 @@ from { transform: translateY(100%); }
 to { transform: translateY(0); }
 }
 
-/* ==========================================================================
-TOAST NOTIFICATION/SNACKBAR PREMIUM DI BAGIAN BAWAH LAYAR
-========================================================================== */
 .custom-toast {
 position: fixed;
 bottom: 24px;
@@ -751,6 +766,19 @@ justify-content: center;
 </tbody>
 </table>
 </div>
+
+<!-- CONTAINER INPUT LOKASI AWAL & TUJUAN (HANYA TAMPIL SAAT KLIK MULAI) -->
+<div id="route-inputs-container">
+  <div class="route-input-group">
+    <label for="route-start-input"><i class="fa-solid fa-circle-dot" style="color:#1a73e8;"></i> Awal:</label>
+    <input type="text" id="route-start-input" readonly placeholder="Mencari GPS lokasi anda...">
+  </div>
+  <div class="route-input-group">
+    <label for="route-dest-input"><i class="fa-solid fa-location-dot" style="color:#ea4335;"></i> Tujuan:</label>
+    <input type="text" id="route-dest-input" readonly placeholder="Pilih lokasi tujuan...">
+  </div>
+</div>
+
 <div class="navigation-action-bar">
 <div id="live-route-info" class="live-route-info-box">
 <i class="fa-solid fa-car-side" style="margin-right: 4px;"></i> Jarak Tempuh: <span id="route-distance-val" style="color:#1a73e8;">-</span>
@@ -763,6 +791,9 @@ justify-content: center;
 </button>
 <button id="btn-maps-start" class="nav-btn btn-google-light">
 <i class="fa-solid fa-location-arrow icon-container-mulai"></i> Mulai
+</button>
+<button id="btn-maps-cancel" class="nav-btn btn-google-light" style="display: none; background-color: #fce8e6; color: #d93025;" onclick="batalFiturNavigasi()">
+<i class="fa-solid fa-xmark"></i> Batal Rute
 </button>
 <button id="btn-maps-share" class="nav-btn btn-google-light">
 <i class="fa-solid fa-link"></i> Salin Tautan
@@ -850,7 +881,6 @@ map.getPane('userGpsPane').style.zIndex = 650;
 map.getPane('userGpsPane').style.pointerEvents = 'none';
 var userLocationLayer = L.layerGroup([], { pane: 'userGpsPane' }).addTo(map);
 
-// FUNGSI SNACKBAR / TOAST NOTIFICATION PREMIUM (BAWAH LAYAR)
 function showToast(pesan, isSuccess = true) {
     const oldToast = document.getElementById('app-toast');
     if (oldToast) oldToast.remove();
@@ -1096,12 +1126,22 @@ isNavigatingActive = false;
 prosesRuteJalanInternal(lat, lng);
 };
 
+// MODIFIKASI: KLIK TOMBOL MULAI UNTUK MENAMPILKAN INPUT TITIK AWAL DAN TUJUAN
 document.getElementById('btn-maps-start').onclick = function() {
 if (!currentPositionUser) {
 showToast("GPS belum terdeteksi. Izinkan akses lokasi.", false);
 return;
 }
 isNavigatingActive = true;
+
+// Tampilkan kolom Input Awal dan Tujuan & Tombol Batal
+document.getElementById('route-inputs-container').style.display = 'flex';
+document.getElementById('btn-maps-cancel').style.display = 'inline-flex';
+
+// Isi otomatis kolom awal dan tujuan
+document.getElementById('route-start-input').value = `Lokasi Anda (${currentPositionUser.lat.toFixed(5)}, ${currentPositionUser.lng.toFixed(5)})`;
+document.getElementById('route-dest-input').value = `${attr.nama_titik} (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+
 prosesRuteJalanInternal(lat, lng);
 map.setView([currentPositionUser.lat, currentPositionUser.lng], 18);
 };
@@ -1121,6 +1161,14 @@ tutupPanelAtribut();
 if (debugDiv) debugDiv.innerHTML = `<b>Berkas Online Berhasil Dimuat!</b><br><span style='color:orange; font-weight:bold;'>Data Disembunyikan Filter</span>`;
 }
 }
+
+// FUNGSI UNTUK MEMBATALKAN/MENUTUP ROUTING BILA KLIK TOMBOL BATAL RUTE
+function batalFiturNavigasi() {
+  document.getElementById('route-inputs-container').style.display = 'none';
+  document.getElementById('btn-maps-cancel').style.display = 'none';
+  bersihkanRuteInternal();
+}
+
 function prosesRuteJalanInternal(destLat, destLng) {
 if (!currentPositionUser) {
 showToast("Lokasi GPS Anda belum terkunci!", false);
@@ -1325,7 +1373,7 @@ return;
 if (window.AppInventor) {
 window.AppInventor.setWebViewString("TG:" + teksDisiapkanUntukShare);
 } else {
-const textEncoded = encodeURIComponent(teksDisiapkanUsefulShare);
+const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
 window.location.href = `https://telegram.me/share/url?text=${textEncoded}`;
 }
 document.getElementById('shareModal').style.display = "none";
@@ -1371,12 +1419,11 @@ document.body.removeChild(el);
 
 function tutupPanelAtribut() {
 document.getElementById('bottom-attribute-panel').classList.remove('active');
-bersihkanRuteInternal();
+batalFiturNavigasi();
 }
 
 map.locate({ setView: false, watch: true, enableHighAccuracy: true, timeout: 10000 });
 
-// === MEKANISME NAVIGASI REAL-TIME YANG DIPERBAIKI ===
 map.on('locationfound', function(e) {
 currentPositionUser = e.latlng;
 userLocationLayer.clearLayers();
@@ -1391,7 +1438,6 @@ iconAnchor: [7, 7]
 L.marker(e.latlng, { icon: userIcon, zIndexOffset: 1000 }).addTo(userLocationLayer);
 
 if (isNavigatingActive && currentDestinationLat && currentDestinationLng) {
-// Memicu pembersihan rute lama dan hitung ulang rute dari posisi motor terbaru ke stasiun tujuan
 prosesRuteJalanInternal(currentDestinationLat, currentDestinationLng);
 map.setView([e.latlng.lat, e.latlng.lng], 18);
 }
@@ -1455,9 +1501,6 @@ document.getElementById('menu-toggle').addEventListener('change', function() {
   }
 });
 
-/* ==========================================================================
-LOGIKA INTERSEPSI TOMBOL BACK BAWAHAN PONSEL (HISTORY POPSTATE)
-========================================================================== */
 function pushNewNavigationState() {
   if (!window.history.state || window.history.state.page !== 'panel-active') {
     window.history.pushState({ page: 'panel-active' }, '');
