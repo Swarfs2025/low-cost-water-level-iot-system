@@ -794,7 +794,7 @@ justify-content: center;
 <i class="fa-solid fa-xmark"></i> Batal Rute
 </button>
 <button id="btn-maps-share" class="nav-btn btn-google-light">
-<i class="fa-solid fa-link"></i> Salin Tautan
+<i class="fa-solid fa-share-nodes"></i> Bagikan
 </button>
 </div>
 </div>
@@ -922,7 +922,7 @@ applySmartFilter();
 }
 
 function parseToValidCoord(valRaw, isLongitude) {
-if (!valRaw) return null;
+if (!valRaw && valRaw !== 0) return null;
 let cleanStr = valRaw.toString().replace(/\s/g, '');
 if (cleanStr.includes(',') && !cleanStr.includes('.')) {
 cleanStr = cleanStr.replace(/,/g, '.');
@@ -1010,12 +1010,12 @@ debugDiv.innerHTML = "<span style='color:red;'>Struktur data spreadsheet tidak d
 }
 return;
 }
-const headers = response.table.cols.map(col => (col.label || "").toLowerCase().trim());
+const headers = response.table.cols.map(col => (col ? col.label || "" : "").toLowerCase().trim());
 const rowValues = response.table.rows[0].c;
 const dataAlat = {};
 headers.forEach((headerName, index) => {
-if (headerName && rowValues[index]) {
-dataAlat[headerName] = rowValues[index].f ? rowValues[index].f : (rowValues[index].v !== null ? rowValues[index].v : "");
+if (headerName && rowValues && rowValues[index]) {
+dataAlat[headerName] = rowValues[index].f ? rowValues[index].f : (rowValues[index].v !== null && rowValues[index].v !== undefined ? rowValues[index].v : "");
 }
 });
 currentCloudData = {
@@ -1496,7 +1496,7 @@ const shareBtnEl = document.getElementById('btn-maps-share');
 if (shareBtnEl) {
   shareBtnEl.addEventListener('click', function(e) {
     e.stopPropagation();
-    salinTautanKeClipboard();
+    jalankanFiturShare();
   });
 }
 
