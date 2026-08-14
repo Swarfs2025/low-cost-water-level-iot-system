@@ -1700,7 +1700,7 @@ function parseToValidCoord(valRaw, isLongitude) {
   return num;
 }
 
-function parseCustomDate(str) {
+function dapatkanObjekWaktu(str) {
   if (!str) return null;
   let d = new Date(str);
   if (!isNaN(d.getTime())) return d;
@@ -1717,7 +1717,7 @@ function parseCustomDate(str) {
 
 function formatWaktuIndo(rawDateStr) {
   if (!rawDateStr) return "-";
-  let dateObj = parseCustomDate(rawDateStr);
+  let dateObj = dapatkanObjekWaktu(rawDateStr);
   return (dateObj && !isNaN(dateObj.getTime())) ? dateObj.toLocaleString('id-ID') : rawDateStr;
 }
 
@@ -1758,17 +1758,19 @@ function processCloudData(response) {
       }
     });
 
-    let statusAkhir = dataAlat["status"] ? dataAlat["status"].toUpperCase() : "OFFLINE";
-    const rawCreatedAt = dataAlat["created_at"];
-    if (rawCreatedAt) {
-      const parsedDate = parseCustomDate(rawCreatedAt);
-      if (parsedDate) {
-        const lastUpdate = parsedDate.getTime();
-        const now = new Date().getTime();
-        const ONE_HOUR_MS = 60 * 60 * 1000;
-        if ((now - lastUpdate) > ONE_HOUR_MS) statusAkhir = "OFFLINE";
-      } else statusAkhir = "OFFLINE";
-    } else statusAkhir = "OFFLINE";
+    let statusAlatOffline = false;
+    let waktuSistemSekarang = new Date();
+    let waktuDataTerakhir = dapatkanObjekWaktu(dataAlat["created_at"]);
+
+    if (waktuDataTerakhir) {
+      let selisihWaktuJam = Math.abs(waktuSistemSekarang - waktuDataTerakhir) / (1000 * 60 * 60);
+      if (selisihWaktuJam > 1.0) { statusAlatOffline = true; }
+    }
+
+    let statusStr = (dataAlat["status"] || "").toString().toUpperCase();
+    if (statusStr.includes("OFFLINE") || statusAlatOffline) { statusAlatOffline = true; }
+
+    const finalStatus = statusAlatOffline ? "OFFLINE" : (statusStr || "AMAN");
 
     const rawTma = parseFloat(dataAlat["tinggi_muka_air"]);
     const smoothedTma = !isNaN(rawTma) ? Math.round(rawTma * 10) / 10 : dataAlat["tinggi_muka_air"] || "-";
@@ -1780,7 +1782,7 @@ function processCloudData(response) {
       estate: dataAlat["estate"] || "-",
       divisi: dataAlat["divisi"] || "-",
       blok: dataAlat["blok"] || "-",
-      status: statusAkhir,
+      status: finalStatus,
       latitude: dataAlat["latitude"] || null,
       longitude: dataAlat["longitude"] || null,
       tinggi_muka_air: smoothedTma,
@@ -1789,7 +1791,7 @@ function processCloudData(response) {
       kecepatan: dataAlat["kecepatan"] || "-",
       kategori_perubahan: dataAlat["kategori_perubahan"] || "-",
       time_forecast: dataAlat["time_forecast"] || "-",
-      created_at: rawCreatedAt || "-"
+      created_at: dataAlat["created_at"] || "-"
     });
   });
 
@@ -1830,10 +1832,14 @@ function applySmartFilter() {
 
   filteredDataList = allCloudDataList.filter(item => {
     const st = item.status.toUpperCase();
-    if (st === 'AMAN' && !chkAman) return false;
-    if (st === 'WASPADA' && !chkWaspada) return false;
-    if (st === 'BAHAYA' && !chkBahaya) return false;
-    if (st === 'OFFLINE' && !chkOffline) return false;
+    let lolosFilterKombinasi = true;
+
+    if (st === 'AMAN' && !chkAman) lolosFilterKombinasi = false;
+    if (st === 'WASPADA' && !chkWaspada) lolosFilterKombinasi = false;
+    if (st === 'BAHAYA' && !chkBahaya) lolosFilterKombinasi = false;
+    if (st === 'OFFLINE' && !chkOffline) lolosFilterKombinasi = false;
+
+    if (!lolosFilterKombinasi) return false;
 
     if (selPsm !== 'ALL' && item.psm !== selPsm) return false;
     if (selEstate !== 'ALL' && item.estate !== selEstate) return false;
@@ -1862,16 +1868,19 @@ function renderMapMarkers(dataList) {
     const lng = parseToValidCoord(item.longitude, true);
 
     if (lat !== null && lng !== null) {
-      let colorClass = 'aman';
-      let bgColor = '#16a34a';
+      let statusAlatOffline = (item.status.toUpperCase() === 'OFFLINE');
+      let warnaMarker = "#16a34a"; // Default: Hijau (Aman)
 
-      if (item.status === 'WASPADA') { colorClass = 'waspada'; bgColor = '#d97706'; }
-      else if (item.status === 'BAHAYA') { colorClass = 'bahaya'; bgColor = '#dc2626'; }
-      else if (item.status === 'OFFLINE') { colorClass = 'offline'; bgColor = '#64748b'; }
+      if (statusAlatOffline) { 
+        warnaMarker = "#64748b"; // Abu-abu (Offline)
+      } else {
+        if (item.status.toUpperCase().includes("WASPADA")) warnaMarker = "#d97706"; // Kuning (Waspada)
+        if (item.status.toUpperCase().includes("BAHAYA")) warnaMarker = "#dc2626";  // Merah (Bahaya)
+      }
 
       const customIcon = L.divIcon({
         className: 'custom-map-marker',
-        html: `<div class="radar-marker-element" style="background-color: ${bgColor}; border-color: #ffffff;"></div>`,
+        html: `<div class="radar-marker-element" style="background-color: ${warnaMarker}; border-color: #ffffff;"></div>`,
         iconSize: [16, 16],
         iconAnchor: [8, 8]
       });
@@ -1911,20 +1920,20 @@ function updateCounterPills(dataList) {
   document.getElementById('count-offline').innerText = offline;
 }
 
-function bukaPanelAtribut(data) {
-  currentCloudData = data;
-  document.getElementById('panel-station-name').innerText = data.nama_titik;
-  document.getElementById('panel-station-sub').innerText = `${data.device_id} | ${data.estate} - Divisi ${data.divisi} (Blok ${data.blok})`;
+function bukaPanelAtribut(attr) {
+  currentCloudData = attr;
+  document.getElementById('panel-station-name').innerText = attr.nama_titik;
+  document.getElementById('panel-station-sub').innerText = `${attr.device_id} | ${attr.estate} - Divisi ${attr.divisi} (Blok ${attr.blok})`;
   
   const tag = document.getElementById('panel-status-tag');
-  tag.className = `status-tag ${data.status.toLowerCase()}`;
-  tag.innerText = data.status;
+  tag.className = `status-tag ${attr.status.toLowerCase()}`;
+  tag.innerText = attr.status;
 
   const routeBtn = document.getElementById('btn-maps-route');
   if (routeBtn) {
     routeBtn.onclick = function() {
-      if (data.latitude && data.longitude) {
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}`;
+      if (attr.latitude && attr.longitude) {
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${attr.latitude},${attr.longitude}`;
         window.open(mapsUrl, '_blank');
       } else {
         showToast("Koordinat lokasi tidak valid");
@@ -1932,25 +1941,37 @@ function bukaPanelAtribut(data) {
     };
   }
 
+  let statusTeksPesan = attr.status;
+  const statusStr = (attr.status || "").toString().toUpperCase();
+  if (!statusStr.includes("OFFLINE")) {
+    if (statusStr.includes("AMAN")) {
+        statusTeksPesan = "✅ AMAN";
+    } else if (statusStr.includes("WASPADA")) {
+        statusTeksPesan = "⚠️ WASPADA";
+    } else if (statusStr.includes("BAHAYA")) {
+        statusTeksPesan = "❌ BAHAYA";
+    }
+  }
+
   const tbody = document.getElementById('panel-table-body');
   tbody.innerHTML = `
     <tr>
-      <td>${data.device_id}</td>
-      <td>${data.nama_titik}</td>
-      <td>${data.psm}</td>
-      <td>${data.estate}</td>
-      <td>${data.divisi}</td>
-      <td>${data.blok}</td>
-      <td><span class="status-tag ${data.status.toLowerCase()}">${data.status}</span></td>
-      <td>${data.latitude}</td>
-      <td>${data.longitude}</td>
-      <td class="tma-text ${data.status.toLowerCase()}">${data.tinggi_muka_air} cm</td>
-      <td>${data.elevasi_muka_air}</td>
-      <td>${data.jarak} cm</td>
-      <td>${data.kecepatan}</td>
-      <td>${data.kategori_perubahan}</td>
-      <td>${data.time_forecast}</td>
-      <td>${formatWaktuIndo(data.created_at)}</td>
+      <td>${attr.device_id}</td>
+      <td>${attr.nama_titik}</td>
+      <td>${attr.psm}</td>
+      <td>${attr.estate}</td>
+      <td>${attr.divisi}</td>
+      <td>${attr.blok}</td>
+      <td><span class="status-tag ${attr.status.toLowerCase()}">${statusTeksPesan}</span></td>
+      <td>${attr.latitude}</td>
+      <td>${attr.longitude}</td>
+      <td class="tma-text ${attr.status.toLowerCase()}">${attr.tinggi_muka_air} cm</td>
+      <td>${attr.elevasi_muka_air}</td>
+      <td>${attr.jarak} cm</td>
+      <td>${attr.kecepatan}</td>
+      <td>${attr.kategori_perubahan}</td>
+      <td>${attr.time_forecast}</td>
+      <td>${formatWaktuIndo(attr.created_at)}</td>
     </tr>
   `;
 
