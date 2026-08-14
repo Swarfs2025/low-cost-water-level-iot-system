@@ -1613,7 +1613,7 @@ function switchView(viewId, element) {
   if (element) element.classList.add('active-menu');
 
   if (viewId === 'map-view') {
-    setTimeout(() => map.invalidateSize(), 200);
+    setTimeout(() => map.invalidateSize(), 100);
   } else if (viewId === 'dashboard-view') {
     updateDashboardUI();
   }
@@ -1737,7 +1737,7 @@ function processCloudData(response) {
   const splash = document.getElementById('splash-screen');
   if (splash && isFirstLoad) {
     splash.style.opacity = '0';
-    setTimeout(() => splash.style.display = 'none', 500);
+    setTimeout(() => splash.style.display = 'none', 300);
   }
 
   if (!response || !response.table || !response.table.rows || response.table.rows.length === 0) return;
@@ -1855,6 +1855,7 @@ function applySmartFilter() {
 function renderMapMarkers(dataList) {
   markerGroup.clearLayers();
   const bounds = [];
+  const markersToAdd = [];
 
   dataList.forEach(item => {
     const lat = parseToValidCoord(item.latitude, false);
@@ -1877,10 +1878,14 @@ function renderMapMarkers(dataList) {
 
       const marker = L.marker([lat, lng], { icon: customIcon });
       marker.on('click', () => bukaPanelAtribut(item));
-      markerGroup.addLayer(marker);
+      markersToAdd.push(marker);
       bounds.push([lat, lng]);
     }
   });
+
+  if (markersToAdd.length > 0) {
+    markersToAdd.forEach(m => markerGroup.addLayer(m));
+  }
 
   if (isFirstLoad && bounds.length > 0) {
     map.fitBounds(bounds, { padding: [50, 50] });
