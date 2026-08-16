@@ -1139,7 +1139,7 @@ body, html {
 
     <div class="search-bar-box">
       <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="filter-search" placeholder="Telusuri perangkat, psm, estate, divisi, blok..." onkeyup="debouncedSmartFilter()">
+      <input type="text" id="filter-search" placeholder="Telusuri perangkat, psm, estate, divisi, blok..." onkeyup="applySmartFilter()">
     </div>
 
     <div class="status-pills-container">
@@ -1676,7 +1676,7 @@ var map = L.map('map', { zoomControl: false, minZoom: 3, worldCopyJump: true }).
 let isFirstLoad = true;
 let allCloudDataList = [];
 let filteredDataList = [];
-let previousDeviceMap = new Map();
+let previousDeviceMap = new Map(); // MODUL NOTIFIKASI: Menyimpan state perangkat sebelumnya
 let currentCloudData = null;
 
 let watchPositionId = null;
@@ -1868,6 +1868,8 @@ function toggleSideModal(id) {
   if (!isAlreadyActive) modal.classList.add('active');
 }
 
+/* ===== FITUR NOTIFIKASI SISTEM (PERBAIKAN FITUR PUSH & IN-APP NOTIFICATION) ===== */
+
 function requestNotificationPermission() {
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission().then(permission => {
@@ -1882,44 +1884,8 @@ function saveAlertSettings() {
   if (document.getElementById('method-push').checked) {
     requestNotificationPermission();
   }
-
-  const alertSettings = {
-    bahaya: document.getElementById('alert-type-bahaya')?.checked ?? true,
-    waspada: document.getElementById('alert-type-waspada')?.checked ?? true,
-    naikCepat: document.getElementById('alert-type-naik-cepat')?.checked ?? true,
-    prediksiBahaya: document.getElementById('alert-type-prediksi-bahaya')?.checked ?? true,
-    offline: document.getElementById('alert-type-offline')?.checked ?? true,
-    onlineKembali: document.getElementById('alert-type-online-kembali')?.checked ?? true,
-    dataStagnan: document.getElementById('alert-type-data-stagnan')?.checked ?? true,
-    methodInApp: document.getElementById('method-inapp')?.checked ?? true,
-    methodPush: document.getElementById('method-push')?.checked ?? true,
-    methodEmail: document.getElementById('method-email')?.checked ?? false
-  };
-
-  localStorage.setItem('lcwl_alert_settings', JSON.stringify(alertSettings));
   showToast("Pengaturan Notifikasi Berhasil Disimpan");
   toggleSideModal('alert-modal');
-}
-
-function loadAlertSettings() {
-  const saved = localStorage.getItem('lcwl_alert_settings');
-  if (!saved) return;
-  try {
-    const s = JSON.parse(saved);
-    if (document.getElementById('alert-type-bahaya')) document.getElementById('alert-type-bahaya').checked = !!s.bahaya;
-    if (document.getElementById('alert-type-waspada')) document.getElementById('alert-type-waspada').checked = !!s.waspada;
-    if (document.getElementById('alert-type-naik-cepat')) document.getElementById('alert-type-naik-cepat').checked = !!s.naikCepat;
-    if (document.getElementById('alert-type-prediksi-bahaya')) document.getElementById('alert-type-prediksi-bahaya').checked = !!s.prediksiBahaya;
-    if (document.getElementById('alert-type-offline')) document.getElementById('alert-type-offline').checked = !!s.offline;
-    if (document.getElementById('alert-type-online-kembali')) document.getElementById('alert-type-online-kembali').checked = !!s.onlineKembali;
-    if (document.getElementById('alert-type-data-stagnan')) document.getElementById('alert-type-data-stagnan').checked = !!s.dataStagnan;
-
-    if (document.getElementById('method-inapp')) document.getElementById('method-inapp').checked = !!s.methodInApp;
-    if (document.getElementById('method-push')) document.getElementById('method-push').checked = !!s.methodPush;
-    if (document.getElementById('method-email')) document.getElementById('method-email').checked = !!s.methodEmail;
-  } catch (e) {
-    console.error("Gagal membaca alert settings:", e);
-  }
 }
 
 function resetAlertSettings() {
@@ -1935,7 +1901,6 @@ function resetAlertSettings() {
   document.getElementById('method-push').checked = true;
   document.getElementById('method-email').checked = false;
 
-  localStorage.removeItem('lcwl_alert_settings');
   showToast("Pengaturan dikembalikan ke standar");
 }
 
@@ -1986,6 +1951,7 @@ function deteksiDanProsesAlert(currentList) {
     const currStatus = item.status.toUpperCase();
     const prevStatus = prev.status.toUpperCase();
 
+    // 1. Alert Level Bahaya
     if (alertBahaya && currStatus === 'BAHAYA' && prevStatus !== 'BAHAYA') {
       kirimAlertDeviceNotification(
         `🚨 PERINGATAN BAHAYA: ${item.nama_titik}`,
@@ -1993,6 +1959,7 @@ function deteksiDanProsesAlert(currentList) {
         item
       );
     }
+    // 2. Alert Level Waspada
     else if (alertWaspada && currStatus === 'WASPADA' && prevStatus !== 'WASPADA') {
       kirimAlertDeviceNotification(
         `⚠️ STATUS WASPADA: ${item.nama_titik}`,
@@ -2000,6 +1967,7 @@ function deteksiDanProsesAlert(currentList) {
         item
       );
     }
+    // 3. Alert Offline
     else if (alertOffline && currStatus === 'OFFLINE' && prevStatus !== 'OFFLINE') {
       kirimAlertDeviceNotification(
         `📡 PERANGKAT OFFLINE: ${item.nama_titik}`,
@@ -2007,6 +1975,7 @@ function deteksiDanProsesAlert(currentList) {
         item
       );
     }
+    // 4. Alert Online Kembali
     else if (alertOnline && currStatus !== 'OFFLINE' && prevStatus === 'OFFLINE') {
       kirimAlertDeviceNotification(
         `🟢 ONLINE KEMBALI: ${item.nama_titik}`,
@@ -2015,6 +1984,7 @@ function deteksiDanProsesAlert(currentList) {
       );
     }
 
+    // 5. Alert Kenaikan Air Cepat
     if (alertNaikCepat && item.kategori_perubahan) {
       const kat = item.kategori_perubahan.toLowerCase();
       if (kat.includes('naik cepat') || kat.includes('drastis')) {
@@ -2029,6 +1999,7 @@ function deteksiDanProsesAlert(currentList) {
       }
     }
 
+    // 6. Alert Prediksi Level Bahaya
     if (alertPrediksiBahaya && item.time_forecast) {
       const tf = item.time_forecast.toLowerCase();
       if (tf.includes('bahaya') || tf.includes('alert')) {
@@ -2043,10 +2014,11 @@ function deteksiDanProsesAlert(currentList) {
       }
     }
 
+    // 7. Alert Data Tidak Diperbarui / Stagnan
     if (alertStagnan && item.created_at && prev.created_at) {
       if (item.created_at === prev.created_at && currStatus !== 'OFFLINE') {
         let tLast = dapatkanObjekWaktu(item.created_at);
-        if (tLast && (new Date() - tLast) > 30 * 60 * 1000) {
+        if (tLast && (new Date() - tLast) > 30 * 60 * 1000) { // 30 Menit tidak ada pembaruan
           kirimAlertDeviceNotification(
             `⚠️ DATA STAGNAN: ${item.nama_titik}`,
             `Perangkat aktif namun belum memperbarui data sejak ${item.created_at}`,
@@ -2090,12 +2062,7 @@ function updateNetworkStatus() {
 
 window.addEventListener('online', () => { updateNetworkStatus(); showToast("Koneksi terhubung kembali"); fetchOnlineData(); });
 window.addEventListener('offline', () => { updateNetworkStatus(); showToast("Koneksi terputus (Offline)"); });
-
 document.addEventListener('DOMContentLoaded', () => {
-  loadAlertSettings();
-  loadFilterSettings();
-  loadBaseMapSetting();
-
   updateNetworkStatus();
   fetchOnlineData();
   setInterval(fetchOnlineData, 30000);
@@ -2115,24 +2082,11 @@ function toggleTableDetails() {
   if (container) container.style.display = (container.style.display === 'block') ? 'none' : 'block'; 
 }
 
-function changeBaseMap(layerKey, save = true) { 
+function changeBaseMap(layerKey) { 
   for (let key in baseLayers) { 
     if (map.hasLayer(baseLayers[key])) map.removeLayer(baseLayers[key]); 
   } 
   if (baseLayers[layerKey]) baseLayers[layerKey].addTo(map); 
-
-  if (save) {
-    localStorage.setItem('lcwl_basemap', layerKey);
-  }
-}
-
-function loadBaseMapSetting() {
-  const savedMap = localStorage.getItem('lcwl_basemap');
-  if (savedMap && baseLayers[savedMap]) {
-    const radioBtn = document.getElementById(`bm-${savedMap}`);
-    if (radioBtn) radioBtn.checked = true;
-    changeBaseMap(savedMap, false);
-  }
 }
 
 function toggleEnterpriseDropdown(containerId) {
@@ -2157,14 +2111,12 @@ function selectEnterpriseOption(type, value, label) {
   document.getElementById(`dropdown-container-${type}`).classList.remove('active');
 
   const listContainer = document.getElementById(`popup-list-${type}`);
-  if (listContainer) {
-    listContainer.querySelectorAll('.popup-list-item').forEach(item => {
-      item.classList.remove('selected');
-      if (item.getAttribute('onclick') && item.getAttribute('onclick').includes(`'${value}'`)) {
-        item.classList.add('selected');
-      }
-    });
-  }
+  listContainer.querySelectorAll('.popup-list-item').forEach(item => {
+    item.classList.remove('selected');
+    if (item.getAttribute('onclick') && item.getAttribute('onclick').includes(`'${value}'`)) {
+      item.classList.add('selected');
+    }
+  });
 }
 
 function parseToValidCoord(valRaw, isLongitude) {
@@ -2215,7 +2167,6 @@ function processCloudData(response) {
   if (splash && isFirstLoad) {
     splash.style.opacity = '0';
     setTimeout(() => splash.style.display = 'none', 300);
-    isFirstLoad = false;
   }
 
   if (!response || !response.table || !response.table.rows || response.table.rows.length === 0) return;
@@ -2274,8 +2225,10 @@ function processCloudData(response) {
   });
 
   if (allCloudDataList.length > 0) {
+    // Evaluasi Perubahan & Picu Notifikasi Sistem
     deteksiDanProsesAlert(allCloudDataList);
 
+    // Perbarui Kamus State Perangkat Sebelum Nya
     previousDeviceMap.clear();
     allCloudDataList.forEach(item => {
       previousDeviceMap.set(item.device_id, { ...item });
@@ -2294,174 +2247,142 @@ function populasiFilterDropdown() {
     if (!listContainer) return;
     
     const uniqueVals = [...new Set(allCloudDataList.map(item => item[field]).filter(val => val && val !== "-"))].sort();
-    const currentVal = document.getElementById(`select-${field}`)?.value || 'ALL';
-
-    let html = `<div class="popup-list-item ${currentVal === 'ALL' ? 'selected' : ''}" onclick="selectEnterpriseOption('${field}', 'ALL', 'Semua ${field.toUpperCase()}')">Semua ${field.toUpperCase()}</div>`;
+    
+    let html = `<div class="popup-list-item selected" onclick="selectEnterpriseOption('${field}', 'ALL', 'Semua ${field.toUpperCase()}')">Semua ${field.toUpperCase()}</div>`;
     uniqueVals.forEach(val => {
-      const isSelected = (currentVal === val);
-      if (isSelected) {
-        document.getElementById(`selected-label-${field}`).innerText = val;
-      }
-      html += `<div class="popup-list-item ${isSelected ? 'selected' : ''}" onclick="selectEnterpriseOption('${field}', '${val}', '${val}')">${val}</div>`;
+      html += `<div class="popup-list-item" onclick="selectEnterpriseOption('${field}', '${val}', '${val}')">${val}</div>`;
     });
     listContainer.innerHTML = html;
   });
 }
 
-function saveFilterSettings() {
-  const filterSettings = {
-    search: document.getElementById('filter-search')?.value || '',
-    chkAman: document.getElementById('chk-aman')?.checked ?? true,
-    chkWaspada: document.getElementById('chk-waspada')?.checked ?? true,
-    chkBahaya: document.getElementById('chk-bahaya')?.checked ?? true,
-    chkOffline: document.getElementById('chk-offline')?.checked ?? true,
-    psm: document.getElementById('select-psm')?.value || 'ALL',
-    psmLabel: document.getElementById('selected-label-psm')?.innerText || 'Semua PSM',
-    estate: document.getElementById('select-estate')?.value || 'ALL',
-    estateLabel: document.getElementById('selected-label-estate')?.innerText || 'Semua Estate',
-    divisi: document.getElementById('select-divisi')?.value || 'ALL',
-    divisiLabel: document.getElementById('selected-label-divisi')?.innerText || 'Semua Divisi',
-    blok: document.getElementById('select-blok')?.value || 'ALL',
-    blokLabel: document.getElementById('selected-label-blok')?.innerText || 'Semua Blok'
-  };
-  localStorage.setItem('lcwl_filter_settings', JSON.stringify(filterSettings));
-}
-
-function loadFilterSettings() {
-  const saved = localStorage.getItem('lcwl_filter_settings');
-  if (!saved) return;
-  try {
-    const f = JSON.parse(saved);
-    if (document.getElementById('filter-search') && f.search !== undefined) document.getElementById('filter-search').value = f.search;
-    if (document.getElementById('chk-aman')) document.getElementById('chk-aman').checked = !!f.chkAman;
-    if (document.getElementById('chk-waspada')) document.getElementById('chk-waspada').checked = !!f.chkWaspada;
-    if (document.getElementById('chk-bahaya')) document.getElementById('chk-bahaya').checked = !!f.chkBahaya;
-    if (document.getElementById('chk-offline')) document.getElementById('chk-offline').checked = !!f.chkOffline;
-
-    if (f.psm) selectEnterpriseOption('psm', f.psm, f.psmLabel || 'Semua PSM');
-    if (f.estate) selectEnterpriseOption('estate', f.estate, f.estateLabel || 'Semua Estate');
-    if (f.divisi) selectEnterpriseOption('divisi', f.divisi, f.divisiLabel || 'Semua Divisi');
-    if (f.blok) selectEnterpriseOption('blok', f.blok, f.blokLabel || 'Semua Blok');
-  } catch (e) {
-    console.error("Gagal membaca filter settings:", e);
-  }
-}
-
-let searchDebounceTimeout = null;
-function debouncedSmartFilter() {
-  clearTimeout(searchDebounceTimeout);
-  searchDebounceTimeout = setTimeout(() => {
-    applySmartFilter();
-  }, 250);
-}
-
 function applySmartFilter() {
-  saveFilterSettings();
-
   const searchQuery = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
   const chkAman = document.getElementById('chk-aman')?.checked ?? true;
   const chkWaspada = document.getElementById('chk-waspada')?.checked ?? true;
   const chkBahaya = document.getElementById('chk-bahaya')?.checked ?? true;
   const chkOffline = document.getElementById('chk-offline')?.checked ?? true;
 
-  const filterPsm = document.getElementById('select-psm')?.value || 'ALL';
-  const filterEstate = document.getElementById('select-estate')?.value || 'ALL';
-  const filterDivisi = document.getElementById('select-divisi')?.value || 'ALL';
-  const filterBlok = document.getElementById('select-blok')?.value || 'ALL';
+  const selPsm = document.getElementById('select-psm')?.value || 'ALL';
+  const selEstate = document.getElementById('select-estate')?.value || 'ALL';
+  const selDivisi = document.getElementById('select-divisi')?.value || 'ALL';
+  const selBlok = document.getElementById('select-blok')?.value || 'ALL';
 
   filteredDataList = allCloudDataList.filter(item => {
     const st = item.status.toUpperCase();
-    let passStatus = false;
-    if (st === 'AMAN' && chkAman) passStatus = true;
-    if (st === 'WASPADA' && chkWaspada) passStatus = true;
-    if (st === 'BAHAYA' && chkBahaya) passStatus = true;
-    if (st === 'OFFLINE' && chkOffline) passStatus = true;
-    if (!passStatus) return false;
+    let lolosFilterKombinasi = true;
 
-    if (filterPsm !== 'ALL' && item.psm !== filterPsm) return false;
-    if (filterEstate !== 'ALL' && item.estate !== filterEstate) return false;
-    if (filterDivisi !== 'ALL' && item.divisi !== filterDivisi) return false;
-    if (filterBlok !== 'ALL' && item.blok !== filterBlok) return false;
+    if (st === 'AMAN' && !chkAman) lolosFilterKombinasi = false;
+    if (st === 'WASPADA' && !chkWaspada) lolosFilterKombinasi = false;
+    if (st === 'BAHAYA' && !chkBahaya) lolosFilterKombinasi = false;
+    if (st === 'OFFLINE' && !chkOffline) lolosFilterKombinasi = false;
 
-    if (searchQuery !== '') {
-      const combinedText = `${item.device_id} ${item.nama_titik} ${item.psm} ${item.estate} ${item.divisi} ${item.blok}`.toLowerCase();
-      if (!combinedText.includes(searchQuery)) return false;
+    if (!lolosFilterKombinasi) return false;
+
+    if (selPsm !== 'ALL' && item.psm !== selPsm) return false;
+    if (selEstate !== 'ALL' && item.estate !== selEstate) return false;
+    if (selDivisi !== 'ALL' && item.divisi !== selDivisi) return false;
+    if (selBlok !== 'ALL' && item.blok !== selBlok) return false;
+
+    if (searchQuery) {
+      const matchText = `${item.device_id} ${item.nama_titik} ${item.psm} ${item.estate} ${item.divisi} ${item.blok}`.toLowerCase();
+      if (!matchText.includes(searchQuery)) return false;
     }
 
     return true;
   });
 
   renderMapMarkers(filteredDataList);
-  updateStatusPillsCount(allCloudDataList);
+  updateCounterPills(allCloudDataList);
 }
 
 function renderMapMarkers(dataList) {
   markerGroup.clearLayers();
+  const bounds = [];
+  const markersToAdd = [];
 
   dataList.forEach(item => {
     const lat = parseToValidCoord(item.latitude, false);
     const lng = parseToValidCoord(item.longitude, true);
 
-    if (lat === null || lng === null) return;
+    if (lat !== null && lng !== null) {
+      let statusAlatOffline = (item.status.toUpperCase() === 'OFFLINE');
+      let warnaMarker = "#16a34a";
 
-    let markerColor = "#16a34a"; // AMAN
-    if (item.status === 'WASPADA') markerColor = "#d97706";
-    else if (item.status === 'BAHAYA') markerColor = "#dc2626";
-    else if (item.status === 'OFFLINE') markerColor = "#64748b";
+      if (statusAlatOffline) { 
+        warnaMarker = "#64748b";
+      } else {
+        if (item.status.toUpperCase().includes("WASPADA")) warnaMarker = "#d97706";
+        if (item.status.toUpperCase().includes("BAHAYA")) warnaMarker = "#dc2626";
+      }
 
-    const customIcon = L.divIcon({
-      className: 'custom-radar-marker',
-      html: `<div class="radar-marker-element" style="background-color: ${markerColor}; border-color: #ffffff;"></div>`,
-      iconSize: [16, 16],
-      iconAnchor: [8, 8]
-    });
+      const customIcon = L.divIcon({
+        className: 'custom-map-marker',
+        html: `<div class="radar-marker-element" style="background-color: ${warnaMarker}; border-color: #ffffff;"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      });
 
-    const marker = L.marker([lat, lng], { icon: customIcon });
-    marker.on('click', () => {
-      bukaPanelAtribut(item);
-    });
-
-    markerGroup.addLayer(marker);
+      const marker = L.marker([lat, lng], { icon: customIcon });
+      marker.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        bukaPanelAtribut(item);
+      });
+      markersToAdd.push(marker);
+      bounds.push([lat, lng]);
+    }
   });
+
+  if (markersToAdd.length > 0) {
+    markersToAdd.forEach(m => markerGroup.addLayer(m));
+  }
+
+  if (isFirstLoad && bounds.length > 0) {
+    map.fitBounds(bounds, { padding: [50, 50] });
+    isFirstLoad = false;
+  }
 }
 
-function updateStatusPillsCount(dataList) {
-  let countAman = 0, countWaspada = 0, countBahaya = 0, countOffline = 0, countOnline = 0;
+function updateCounterPills(dataList) {
+  let aman = 0, waspada = 0, bahaya = 0, online = 0, offline = 0;
 
   dataList.forEach(item => {
     const st = item.status.toUpperCase();
-    if (st === 'AMAN') countAman++;
-    else if (st === 'WASPADA') countWaspada++;
-    else if (st === 'BAHAYA') countBahaya++;
-
-    if (st === 'OFFLINE') countOffline++;
-    else countOnline++;
+    if (st === 'AMAN') { aman++; online++; }
+    else if (st === 'WASPADA') { waspada++; online++; }
+    else if (st === 'BAHAYA') { bahaya++; online++; }
+    else { offline++; }
   });
 
-  if (document.getElementById('count-aman')) document.getElementById('count-aman').innerText = countAman;
-  if (document.getElementById('count-waspada')) document.getElementById('count-waspada').innerText = countWaspada;
-  if (document.getElementById('count-bahaya')) document.getElementById('count-bahaya').innerText = countBahaya;
-  if (document.getElementById('count-online')) document.getElementById('count-online').innerText = countOnline;
-  if (document.getElementById('count-offline')) document.getElementById('count-offline').innerText = countOffline;
+  document.getElementById('count-aman').innerText = aman;
+  document.getElementById('count-waspada').innerText = waspada;
+  document.getElementById('count-bahaya').innerText = bahaya;
+  document.getElementById('count-online').innerText = online;
+  document.getElementById('count-offline').innerText = offline;
 }
 
 function setQuickStatusFilter(statusType) {
+  const chkAman = document.getElementById('chk-aman');
+  const chkWaspada = document.getElementById('chk-waspada');
+  const chkBahaya = document.getElementById('chk-bahaya');
+  const chkOffline = document.getElementById('chk-offline');
+
   if (statusType === 'ONLINE') {
-    document.getElementById('chk-aman').checked = true;
-    document.getElementById('chk-waspada').checked = true;
-    document.getElementById('chk-bahaya').checked = true;
-    document.getElementById('chk-offline').checked = false;
+    if (chkAman) chkAman.checked = true;
+    if (chkWaspada) chkWaspada.checked = true;
+    if (chkBahaya) chkBahaya.checked = true;
+    if (chkOffline) chkOffline.checked = false;
   } else {
-    document.getElementById('chk-aman').checked = (statusType === 'AMAN');
-    document.getElementById('chk-waspada').checked = (statusType === 'WASPADA');
-    document.getElementById('chk-bahaya').checked = (statusType === 'BAHAYA');
-    document.getElementById('chk-offline').checked = (statusType === 'OFFLINE');
+    if (chkAman) chkAman.checked = (statusType === 'AMAN');
+    if (chkWaspada) chkWaspada.checked = (statusType === 'WASPADA');
+    if (chkBahaya) chkBahaya.checked = (statusType === 'BAHAYA');
+    if (chkOffline) chkOffline.checked = (statusType === 'OFFLINE');
   }
+
   applySmartFilter();
 }
 
 function resetFilterUI() {
-  document.getElementById('filter-search').value = '';
   document.getElementById('chk-aman').checked = true;
   document.getElementById('chk-waspada').checked = true;
   document.getElementById('chk-bahaya').checked = true;
@@ -2472,140 +2393,50 @@ function resetFilterUI() {
   selectEnterpriseOption('divisi', 'ALL', 'Semua Divisi');
   selectEnterpriseOption('blok', 'ALL', 'Semua Blok');
 
+  const searchInput = document.getElementById('filter-search');
+  if (searchInput) searchInput.value = '';
+
   applySmartFilter();
-  showToast("Filter berhasil di-reset");
+  showToast("Filter berhasil direset");
 }
 
 function terapkanFilterUI() {
   applySmartFilter();
   toggleSideModal('filter-modal');
-  showToast("Filter diterapkan");
-}
-
-function bukaPanelAtribut(itemData) {
-  currentCloudData = itemData;
-
-  const panel = document.getElementById('bottom-attribute-panel');
-  if (!panel) return;
-
-  document.getElementById('panel-station-name').innerText = itemData.nama_titik || '-';
-  document.getElementById('panel-station-sub').innerText = `${itemData.device_id} • ${itemData.estate} • Divisi ${itemData.divisi} • Blok ${itemData.blok}`;
-
-  const statusTag = document.getElementById('panel-status-tag');
-  statusTag.className = `status-tag ${itemData.status.toLowerCase()}`;
-  statusTag.innerText = itemData.status;
-
-  const btnNav = document.getElementById('btn-maps-route');
-  if (btnNav) {
-    btnNav.onclick = () => {
-      const lat = parseToValidCoord(itemData.latitude, false);
-      const lng = parseToValidCoord(itemData.longitude, true);
-      if (lat !== null && lng !== null) {
-        mulaiNavigasiInternal(lat, lng);
-      } else {
-        showToast("Koordinat lokasi tidak valid");
-      }
-    };
-  }
-
-  const tbody = document.getElementById('panel-table-body');
-  tbody.innerHTML = `
-    <tr>
-      <td>${itemData.device_id}</td>
-      <td>${itemData.nama_titik}</td>
-      <td>${itemData.psm}</td>
-      <td>${itemData.estate}</td>
-      <td>${itemData.divisi}</td>
-      <td>${itemData.blok}</td>
-      <td><span class="status-badge-sm ${itemData.status.toLowerCase()}">${itemData.status}</span></td>
-      <td>${itemData.latitude || '-'}</td>
-      <td>${itemData.longitude || '-'}</td>
-      <td class="tma-text ${itemData.status.toLowerCase()}">${itemData.tinggi_muka_air} cm</td>
-      <td>${itemData.elevasi_muka_air}</td>
-      <td>${itemData.jarak}</td>
-      <td>${itemData.kecepatan}</td>
-      <td>${itemData.kategori_perubahan}</td>
-      <td>${itemData.time_forecast}</td>
-      <td>${formatWaktuIndo(itemData.created_at)}</td>
-    </tr>
-  `;
-
-  teksDisiapkanForShare = `[LCWL 2.0 - LIVE MONITORING]\nPerangkat: ${itemData.nama_titik} (${itemData.device_id})\nStatus: ${itemData.status}\nTMA: ${itemData.tinggi_muka_air} cm\nLokasi: ${itemData.estate}, Divisi ${itemData.divisi}, Blok ${itemData.blok}\nUpdate: ${formatWaktuIndo(itemData.created_at)}`;
-
-  panel.classList.add('active');
-}
-
-function jalankanFiturShare() {
-  const modal = document.getElementById('shareModal');
-  if (modal) modal.style.display = 'flex';
-}
-
-function tutupShareModal(e) {
-  document.getElementById('shareModal').style.display = 'none';
-}
-
-function shareKeWA() {
-  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(teksDisiapkanForShare)}`, '_blank');
-  tutupShareModal();
-}
-
-function shareKeTelegram() {
-  window.open(`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(teksDisiapkanForShare)}`, '_blank');
-  tutupShareModal();
-}
-
-function salinTautanKeClipboard() {
-  navigator.clipboard.writeText(teksDisiapkanForShare).then(() => {
-    showToast("Detail berhasil disalin ke clipboard!");
-    tutupShareModal();
-  }).catch(() => {
-    showToast("Gagal menyalin teks.");
-  });
+  showToast("Filter berhasil diterapkan");
 }
 
 function updateDashboardUI() {
-  const total = allCloudDataList.length;
-  let aman = 0, waspada = 0, bahaya = 0, offline = 0;
-  let tmaSum = 0, tmaCount = 0;
-  let maxTma = -Infinity, minTma = Infinity;
-  let maxDev = "-", minDev = "-";
+  if (allCloudDataList.length === 0) return;
 
+  let total = allCloudDataList.length;
+  let aman = 0, waspada = 0, bahaya = 0, offline = 0;
+  let validTmaList = [];
   let alertList = [];
 
   allCloudDataList.forEach(item => {
     const st = item.status.toUpperCase();
     if (st === 'AMAN') aman++;
-    else if (st === 'WASPADA') waspada++;
-    else if (st === 'BAHAYA') bahaya++;
-    else if (st === 'OFFLINE') offline++;
+    else if (st === 'WASPADA') { waspada++; alertList.push(item); }
+    else if (st === 'BAHAYA') { bahaya++; alertList.push(item); }
+    else { offline++; alertList.push(item); }
 
-    if (st === 'WASPADA' || st === 'BAHAYA' || st === 'OFFLINE') {
-      alertList.push(item);
-    }
-
-    const tma = parseFloat(item.tinggi_muka_air);
-    if (!isNaN(tma)) {
-      tmaSum += tma;
-      tmaCount++;
-      if (tma > maxTma) { maxTma = tma; maxDev = item.nama_titik; }
-      if (tma < minTma) { minTma = tma; minDev = item.nama_titik; }
+    const numTma = parseFloat(item.tinggi_muka_air);
+    if (!isNaN(numTma)) {
+      validTmaList.push({ tma: numTma, device: item.nama_titik, speed: parseFloat(item.kecepatan) || 0 });
     }
   });
 
-  const percAman = total > 0 ? ((aman / total) * 100).toFixed(1) : 0;
-  const percWaspada = total > 0 ? ((waspada / total) * 100).toFixed(1) : 0;
-  const percBahaya = total > 0 ? ((bahaya / total) * 100).toFixed(1) : 0;
-  const percOffline = total > 0 ? ((offline / total) * 100).toFixed(1) : 0;
-
   document.getElementById('dash-total-val').innerText = total;
   document.getElementById('dash-aman-val').innerText = aman;
-  document.getElementById('dash-aman-sub').innerText = `${percAman}% dari total`;
   document.getElementById('dash-waspada-val').innerText = waspada;
-  document.getElementById('dash-waspada-sub').innerText = `${percWaspada}% dari total`;
   document.getElementById('dash-bahaya-val').innerText = bahaya;
-  document.getElementById('dash-bahaya-sub').innerText = `${percBahaya}% dari total`;
   document.getElementById('dash-offline-val').innerText = offline;
-  document.getElementById('dash-offline-sub').innerText = `${percOffline}% dari total`;
+
+  document.getElementById('dash-aman-sub').innerText = `${Math.round((aman/total)*100)}% dari total`;
+  document.getElementById('dash-waspada-sub').innerText = `${Math.round((waspada/total)*100)}% dari total`;
+  document.getElementById('dash-bahaya-sub').innerText = `${Math.round((bahaya/total)*100)}% dari total`;
+  document.getElementById('dash-offline-sub').innerText = `${Math.round((offline/total)*100)}% dari total`;
 
   document.getElementById('chart-center-val').innerText = total;
   document.getElementById('leg-aman').innerText = aman;
@@ -2613,23 +2444,35 @@ function updateDashboardUI() {
   document.getElementById('leg-bahaya').innerText = bahaya;
   document.getElementById('leg-offline').innerText = offline;
 
-  const avgTma = tmaCount > 0 ? (tmaSum / tmaCount).toFixed(1) : "-";
-  document.getElementById('dash-avg-tma').innerText = avgTma !== "-" ? `${avgTma} cm` : "-";
-  document.getElementById('dash-max-tma').innerText = maxTma !== -Infinity ? `${maxTma} cm` : "-";
-  document.getElementById('dash-max-device').innerText = maxDev;
-  document.getElementById('dash-min-tma').innerText = minTma !== Infinity ? `${minTma} cm` : "-";
-  document.getElementById('dash-min-device').innerText = minDev;
-  document.getElementById('dash-speed-tma').innerText = "Normal";
+  if (validTmaList.length > 0) {
+    let sumTma = validTmaList.reduce((acc, curr) => acc + curr.tma, 0);
+    let avgTma = Math.round((sumTma / validTmaList.length) * 10) / 10;
+    
+    validTmaList.sort((a, b) => b.tma - a.tma);
+    let maxObj = validTmaList[0];
+    let minObj = validTmaList[validTmaList.length - 1];
 
-  document.getElementById('dash-time-indicator').innerText = `Update: ${new Date().toLocaleTimeString('id-ID')}`;
+    let sumSpeed = validTmaList.reduce((acc, curr) => acc + curr.speed, 0);
+    let avgSpeed = Math.round((sumSpeed / validTmaList.length) * 100) / 100;
+
+    document.getElementById('dash-avg-tma').innerText = `${avgTma} cm`;
+    document.getElementById('dash-max-tma').innerText = `${maxObj.tma} cm`;
+    document.getElementById('dash-max-device').innerText = maxObj.device;
+    document.getElementById('dash-min-tma').innerText = `${minObj.tma} cm`;
+    document.getElementById('dash-min-device').innerText = minObj.device;
+    document.getElementById('dash-speed-tma').innerText = `${avgSpeed} cm/j`;
+  }
+
+  const indicator = document.getElementById('dash-time-indicator');
+  if (indicator) indicator.innerText = `Updated: ${new Date().toLocaleTimeString('id-ID')}`;
 
   const tbody = document.getElementById('dash-alert-tbody');
   if (alertList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color:#16a34a; font-weight:600;">Semua Perangkat Berjalan Normal (Aman)</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color:#16a34a; font-weight:700;">Semua Perangkat Berjalan Normal (Aman)</td></tr>`;
   } else {
-    let rowsHtml = "";
+    let html = '';
     alertList.forEach(item => {
-      rowsHtml += `
+      html += `
         <tr>
           <td>${item.device_id}</td>
           <td><b>${item.nama_titik}</b></td>
@@ -2640,9 +2483,9 @@ function updateDashboardUI() {
           <td><span class="status-badge-sm ${item.status.toLowerCase()}">${item.status}</span></td>
           <td>${item.latitude || '-'}</td>
           <td>${item.longitude || '-'}</td>
-          <td class="tma-text ${item.status.toLowerCase()}">${item.tinggi_muka_air} cm</td>
+          <td style="font-weight:700;">${item.tinggi_muka_air} cm</td>
           <td>${item.elevasi_muka_air}</td>
-          <td>${item.jarak}</td>
+          <td>${item.jarak} cm</td>
           <td>${item.kecepatan}</td>
           <td>${item.kategori_perubahan}</td>
           <td>${item.time_forecast}</td>
@@ -2650,14 +2493,14 @@ function updateDashboardUI() {
         </tr>
       `;
     });
-    tbody.innerHTML = rowsHtml;
+    tbody.innerHTML = html;
   }
 
-  renderStatusChart(aman, waspada, bahaya, offline);
+  renderStatusDonutChart(aman, waspada, bahaya, offline);
 }
 
-function renderStatusChart(aman, waspada, bahaya, offline) {
-  const ctx = document.getElementById('statusDonutChart');
+function renderStatusDonutChart(aman, waspada, bahaya, offline) {
+  const ctx = document.getElementById('statusDonutChart')?.getContext('2d');
   if (!ctx) return;
 
   if (statusChartInstance) {
@@ -2671,20 +2514,205 @@ function renderStatusChart(aman, waspada, bahaya, offline) {
       datasets: [{
         data: [aman, waspada, bahaya, offline],
         backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#94a3b8'],
-        borderWidth: 0,
-        hoverOffset: 4
+        borderWidth: 2,
+        borderColor: '#ffffff'
       }]
     },
     options: {
+      cutout: '75%',
       responsive: true,
       maintainAspectRatio: true,
-      cutout: '75%',
       plugins: {
         legend: { display: false },
         tooltip: { enabled: true }
       }
     }
   });
+}
+
+function bukaPanelAtribut(attr) {
+  currentCloudData = attr;
+  document.getElementById('panel-station-name').innerText = attr.nama_titik;
+  document.getElementById('panel-station-sub').innerText = `${attr.device_id} | ${attr.estate} - Divisi ${attr.divisi} (Blok ${attr.blok})`;
+  
+  const tag = document.getElementById('panel-status-tag');
+  tag.className = `status-tag ${attr.status.toLowerCase()}`;
+  tag.innerText = attr.status;
+
+  const routeBtn = document.getElementById('btn-maps-route');
+  if (routeBtn) {
+    routeBtn.onclick = function() {
+      const lat = parseToValidCoord(attr.latitude, false);
+      const lng = parseToValidCoord(attr.longitude, true);
+      if (lat !== null && lng !== null) {
+        mulaiNavigasiInternal(lat, lng);
+      } else {
+        showToast("Koordinat lokasi perangkat tidak valid");
+      }
+    };
+  }
+
+  let statusTeksPesan = attr.status;
+  const statusStr = (attr.status || "").toString().toUpperCase();
+  if (!statusStr.includes("OFFLINE")) {
+    if (statusStr.includes("AMAN")) {
+        statusTeksPesan = "✅ AMAN";
+    } else if (statusStr.includes("WASPADA")) {
+        statusTeksPesan = "⚠️ WASPADA";
+    } else if (statusStr.includes("BAHAYA")) {
+        statusTeksPesan = "❌ BAHAYA";
+    }
+  }
+
+  const tbody = document.getElementById('panel-table-body');
+  tbody.innerHTML = `
+    <tr>
+      <td>${attr.device_id}</td>
+      <td>${attr.nama_titik}</td>
+      <td>${attr.psm}</td>
+      <td>${attr.estate}</td>
+      <td>${attr.divisi}</td>
+      <td>${attr.blok}</td>
+      <td><span class="status-tag ${attr.status.toLowerCase()}">${statusTeksPesan}</span></td>
+      <td>${attr.latitude}</td>
+      <td>${attr.longitude}</td>
+      <td class="tma-text ${attr.status.toLowerCase()}">${attr.tinggi_muka_air} cm</td>
+      <td>${attr.elevasi_muka_air}</td>
+      <td>${attr.jarak} cm</td>
+      <td>${attr.kecepatan}</td>
+      <td>${attr.kategori_perubahan}</td>
+      <td>${attr.time_forecast}</td>
+      <td>${formatWaktuIndo(attr.created_at)}</td>
+    </tr>
+  `;
+
+  document.getElementById('bottom-attribute-panel').classList.add('active');
+}
+
+function rakitTeksShare() {
+    const lat = parseToValidCoord(currentCloudData.latitude, false);
+    const lng = parseToValidCoord(currentCloudData.longitude, true);
+    
+    const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+    
+    let statusStr = (currentCloudData.status || "").toString().toUpperCase();
+    let statusTeksPesan = "OFFLINE"; 
+    
+    let statusAlatOffline = false;
+    let waktuSistemSekarang = new Date();
+    let waktuDataTerakhir = dapatkanObjekWaktu(currentCloudData.created_at);
+    if (waktuDataTerakhir) {
+        let selisihWaktuJam = Math.abs(waktuSistemSekarang - waktuDataTerakhir) / (1000 * 60 * 60);
+        if (selisihWaktuJam > 1.0) { statusAlatOffline = true; }
+    }
+    if (statusStr.includes("OFFLINE")) { statusAlatOffline = true; }
+
+    if (!statusAlatOffline) {
+        if (statusStr.includes("AMAN")) {
+            statusTeksPesan = "✅ AMAN";
+        } else if (statusStr.includes("WASPADA")) {
+            statusTeksPesan = "⚠️ WASPADA";
+        } else if (statusStr.includes("BAHAYA")) {
+            statusTeksPesan = "❌ BAHAYA";
+        } else {
+            statusTeksPesan = statusStr; 
+        }
+    }
+
+    function padRight(teks, totalLebar) {
+        let str = teks.toString();
+        return str + ' '.repeat(Math.max(0, totalLebar - str.length));
+    }
+
+    let teksPesan = `LCWL 2.0 | LOW COST WATER LEVEL\n\n` +
+                    `📍 *Informasi Lokasi*\n` +
+                    `\`${padRight("Nama Titik", 16)}: ${currentCloudData.nama_titik}\`\n` +
+                    `\`${padRight("Status", 16)}: ${statusTeksPesan}\`\n` +
+                    `\`${padRight("Tinggi Muka Air", 16)}: ${currentCloudData.tinggi_muka_air} cm\`\n` +
+                    `\`${padRight("Estate", 16)}: ${currentCloudData.estate}\`\n` +
+                    `\`${padRight("Blok", 16)}: ${currentCloudData.blok}\`\n` +
+                    `\`${padRight("Created At", 16)}: ${currentCloudData.created_at}\`\n\n` +
+                    `📌 *Koordinat GPS*\n` +
+                    `\`${padRight("Latitude", 16)}: ${lat}\`\n` +
+                    `\`${padRight("Longitude", 16)}: ${lng}\`\n\n` +
+                    `🌐 *Google Maps*\n` +
+                    `${googleMapsLink}\n\n` +
+                    `Pesan ini dibuat secara otomatis oleh LCWL 2.0.`;
+
+    return {
+        title: `LCWL 2.0 - ${currentCloudData.nama_titik}`,
+        text: teksPesan
+    };
+}
+
+function pushNewNavigationState() {
+    if (window.history && window.history.pushState) {
+        window.history.pushState({ modalOpen: true }, "");
+    }
+}
+
+function jalankanFiturShare() {
+    if (!currentCloudData) {
+        showToast("Data belum siap dibagikan!");
+        return;
+    }
+    const shareData = rakitTeksShare();
+    teksDisiapkanForShare = shareData.text;
+    pushNewNavigationState();
+
+    if (navigator.share) {
+        navigator.share({
+            title: shareData.title,
+            text: teksDisiapkanForShare
+        })
+        .then(() => console.log('Berhasil memicu Native Share Sheet.'))
+        .catch((err) => {
+            if (err.name !== 'AbortError') {
+                bukaModalKustom(teksDisiapkanForShare);
+            }
+        });
+    } else {
+        bukaModalKustom(teksDisiapkanForShare);
+    }
+}
+
+function bukaModalKustom(teksLengkap) {
+    teksDisiapkanForShare = teksLengkap;
+    document.getElementById('shareModal').style.display = "flex";
+}
+
+function tutupShareModal(event) {
+    if (!event || event.target === document.getElementById('shareModal')) {
+        document.getElementById('shareModal').style.display = "none";
+    }
+}
+
+function shareKeWA() {
+    if (!teksDisiapkanForShare) {
+        showToast("Teks belum siap!");
+        return;
+    }
+    const textEncoded = encodeURIComponent(teksDisiapkanForShare);
+    window.location.href = `https://api.whatsapp.com/send?text=${textEncoded}`;
+}
+
+function shareKeTelegram() {
+    if (!teksDisiapkanForShare) {
+        showToast("Teks belum siap!");
+        return;
+    }
+    const textEncoded = encodeURIComponent(teksDisiapkanForShare);
+    window.location.href = `https://t.me/share/url?url=&text=${textEncoded}`;
+}
+
+function salinTautanKeClipboard() {
+    if (!teksDisiapkanForShare) {
+        showToast("Teks belum siap!");
+        return;
+    }
+    navigator.clipboard.writeText(teksDisiapkanForShare)
+        .then(() => showToast("Teks berhasil disalin!"))
+        .catch(() => showToast("Gagal menyalin teks."));
 }
 </script>
 </body>
