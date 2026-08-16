@@ -63,6 +63,38 @@ body, html {
   background-color: #111827;
 }
 
+/* KUSTOMISASI LEAFLET ROUTING MACHINE DI POJOK KIRI BAWAH & HANYA JARAK */
+.leaflet-routing-container {
+  position: absolute !important;
+  left: 12px !important;
+  bottom: 24px !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: 1000;
+  background: var(--card-bg) !important;
+  backdrop-filter: blur(12px);
+  padding: 10px 14px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2) !important;
+  max-width: 220px;
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Sembunyikan detail rute teks panjang, tampilkan ringkasan jarak/waktu saja */
+.leaflet-routing-alt {
+  max-height: none !important;
+}
+.leaflet-routing-alt tr {
+  display: none !important; /* Sembunyikan langkah-langkah turn-by-turn */
+}
+.leaflet-routing-alt h2 {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 /* Splash Screen */
 #splash-screen {
   position: fixed;
@@ -1564,7 +1596,7 @@ let watchPositionId = null;
 let isTrackingActive = false;
 let statusChartInstance = null;
 let teksDisiapkanForShare = "";
-let routingControlInstance = null; // Variabel kontrol rute internal
+let routingControlInstance = null;
 
 var googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { attribution: '© Google Satellite' }).addTo(map);
 var googleDefault = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { attribution: '© Google Streets' });
@@ -1674,7 +1706,6 @@ function toggleUserTracking() {
   }
 }
 
-// Fungsi Fitur Navigasi Internal Baru (Tanpa Google Maps Eksternal)
 function mulaiNavigasiInternal(destLat, destLng) {
   if (!navigator.geolocation) {
     showToast("Geolocation tidak didukung pada browser ini.");
@@ -1688,16 +1719,13 @@ function mulaiNavigasiInternal(destLat, destLng) {
       const userLat = position.coords.latitude;
       const userLng = position.coords.longitude;
 
-      // Render marker lokasi user saat ini
       renderUserLocationMarker(userLat, userLng, position.coords.accuracy);
 
-      // Hapus rute sebelumnya jika ada
       if (routingControlInstance) {
         map.removeControl(routingControlInstance);
         routingControlInstance = null;
       }
 
-      // Buat rute baru menggunakan Leaflet Routing Machine
       routingControlInstance = L.Routing.control({
         waypoints: [
           L.latLng(userLat, userLng),
@@ -1710,7 +1738,7 @@ function mulaiNavigasiInternal(destLat, destLng) {
         lineOptions: {
           styles: [{ color: '#0052cc', opacity: 0.8, weight: 6 }]
         },
-        createMarker: function() { return null; } // Skip marker tambahan agar marker perangkat asli tetap bersih
+        createMarker: function() { return null; }
       }).addTo(map);
 
       tutupPanelAtribut();
@@ -2069,7 +2097,6 @@ function bukaPanelAtribut(attr) {
   tag.className = `status-tag ${attr.status.toLowerCase()}`;
   tag.innerText = attr.status;
 
-  // Integrasi tombol rute internal
   const routeBtn = document.getElementById('btn-maps-route');
   if (routeBtn) {
     routeBtn.onclick = function() {
