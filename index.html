@@ -2274,7 +2274,7 @@ function resetFilterUI() {
   applySmartFilter();
 }
 
-/* ===== LOGIKA DASHBOARD UI & DONUT CHART ===== */
+/* ===== LOGIKA DASHBOARD UI ===== */
 function updateDashboardUI() {
   const total = allCloudDataList.length;
   let aman = 0, waspada = 0, bahaya = 0, offline = 0;
@@ -2313,10 +2313,6 @@ function updateDashboardUI() {
   document.getElementById('leg-bahaya').innerText = bahaya;
   document.getElementById('leg-offline').innerText = offline;
 
-  document.getElementById('dash-time-indicator').innerText = new Date().toLocaleDateString('id-ID', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
-
   if (tmaList.length > 0) {
     const sum = tmaList.reduce((a, b) => a + b.val, 0);
     const avg = (sum / tmaList.length).toFixed(1);
@@ -2332,11 +2328,10 @@ function updateDashboardUI() {
 
   const alertTbody = document.getElementById('dash-alert-tbody');
   if (alertList.length === 0) {
-    alertTbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color:#94a3b8;">Tidak ada perangkat dalam status peringatan.</td></tr>`;
+    alertTbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color:#16a34a; font-weight:700;">Semua perangkat dalam kondisi AMAN</td></tr>`;
   } else {
-    let rowsHtml = "";
+    let rowsHtml = '';
     alertList.forEach(item => {
-      let badgeClass = item.status.toLowerCase();
       rowsHtml += `
         <tr>
           <td><b>${item.device_id}</b></td>
@@ -2345,12 +2340,12 @@ function updateDashboardUI() {
           <td>${item.estate}</td>
           <td>${item.divisi}</td>
           <td>${item.blok}</td>
-          <td><span class="status-badge-sm ${badgeClass}">${item.status}</span></td>
-          <td>${item.latitude}</td>
-          <td>${item.longitude}</td>
+          <td><span class="status-badge-sm ${item.status.toLowerCase()}">${item.status}</span></td>
+          <td>${item.latitude || '-'}</td>
+          <td>${item.longitude || '-'}</td>
           <td><b>${item.tinggi_muka_air} cm</b></td>
           <td>${item.elevasi_muka_air}</td>
-          <td>${item.jarak}</td>
+          <td>${item.jarak} cm</td>
           <td>${item.kecepatan}</td>
           <td>${item.kategori_perubahan}</td>
           <td>${item.time_forecast}</td>
@@ -2361,10 +2356,10 @@ function updateDashboardUI() {
     alertTbody.innerHTML = rowsHtml;
   }
 
-  renderStatusDonutChart(aman, waspada, bahaya, offline);
+  renderDonutChart(aman, waspada, bahaya, offline);
 }
 
-function renderStatusDonutChart(aman, waspada, bahaya, offline) {
+function renderDonutChart(aman, waspada, bahaya, offline) {
   const ctx = document.getElementById('statusDonutChart')?.getContext('2d');
   if (!ctx) return;
 
@@ -2378,18 +2373,18 @@ function renderStatusDonutChart(aman, waspada, bahaya, offline) {
       labels: ['Aman', 'Waspada', 'Bahaya', 'Offline'],
       datasets: [{
         data: [aman, waspada, bahaya, offline],
-        backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#64748b'],
+        backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#94a3b8'],
         borderWidth: 2,
         borderColor: '#ffffff'
       }]
     },
     options: {
+      cutout: '75%',
       responsive: true,
       maintainAspectRatio: true,
       plugins: {
         legend: { display: false }
-      },
-      cutout: '75%'
+      }
     }
   });
 }
