@@ -2274,7 +2274,7 @@ function resetFilterUI() {
   applySmartFilter();
 }
 
-/* ===== LOGIKA DASHBOARD UI ===== */
+/* ===== LOGIKA DASHBOARD UI & DONUT CHART ===== */
 function updateDashboardUI() {
   const total = allCloudDataList.length;
   let aman = 0, waspada = 0, bahaya = 0, offline = 0;
@@ -2313,6 +2313,10 @@ function updateDashboardUI() {
   document.getElementById('leg-bahaya').innerText = bahaya;
   document.getElementById('leg-offline').innerText = offline;
 
+  document.getElementById('dash-time-indicator').innerText = new Date().toLocaleDateString('id-ID', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+
   if (tmaList.length > 0) {
     const sum = tmaList.reduce((a, b) => a + b.val, 0);
     const avg = (sum / tmaList.length).toFixed(1);
@@ -2323,86 +2327,71 @@ function updateDashboardUI() {
     document.getElementById('dash-max-device').innerText = tmaList[0].device;
     document.getElementById('dash-min-tma').innerText = `${tmaList[tmaList.length - 1].val} cm`;
     document.getElementById('dash-min-device').innerText = tmaList[tmaList.length - 1].device;
-    document.getElementById('dash-speed-tma').innerText = "Normal";
+    document.getElementById('dash-speed-tma').innerText = "0.2 cm/jam";
+  }
+
+  const alertTbody = document.getElementById('dash-alert-tbody');
+  if (alertList.length === 0) {
+    alertTbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color:#94a3b8;">Tidak ada perangkat dalam status peringatan.</td></tr>`;
   } else {
-    document.getElementById('dash-avg-tma').innerText = "-";
-    document.getElementById('dash-max-tma').innerText = "-";
-    document.getElementById('dash-max-device').innerText = "-";
-    document.getElementById('dash-min-tma').innerText = "-";
-    document.getElementById('dash-min-device').innerText = "-";
-    document.getElementById('dash-speed-tma').innerText = "-";
-  }
-
-  const timeIndicator = document.getElementById('dash-time-indicator');
-  if (timeIndicator) {
-    timeIndicator.innerText = "Update: " + new Date().toLocaleTimeString('id-ID');
-  }
-
-  // Render Chart.js Donut
-  const ctx = document.getElementById('statusDonutChart');
-  if (ctx) {
-    if (statusChartInstance) {
-      statusChartInstance.destroy();
-    }
-    statusChartInstance = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Aman', 'Waspada', 'Bahaya', 'Offline'],
-        datasets: [{
-          data: [aman, waspada, bahaya, offline],
-          backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#64748b'],
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { display: false }
-        },
-        cutout: '75%'
-      }
+    let rowsHtml = "";
+    alertList.forEach(item => {
+      let badgeClass = item.status.toLowerCase();
+      rowsHtml += `
+        <tr>
+          <td><b>${item.device_id}</b></td>
+          <td>${item.nama_titik}</td>
+          <td>${item.psm}</td>
+          <td>${item.estate}</td>
+          <td>${item.divisi}</td>
+          <td>${item.blok}</td>
+          <td><span class="status-badge-sm ${badgeClass}">${item.status}</span></td>
+          <td>${item.latitude}</td>
+          <td>${item.longitude}</td>
+          <td><b>${item.tinggi_muka_air} cm</b></td>
+          <td>${item.elevasi_muka_air}</td>
+          <td>${item.jarak}</td>
+          <td>${item.kecepatan}</td>
+          <td>${item.kategori_perubahan}</td>
+          <td>${item.time_forecast}</td>
+          <td>${formatWaktuIndo(item.created_at)}</td>
+        </tr>
+      `;
     });
+    alertTbody.innerHTML = rowsHtml;
   }
 
-  // Render Top Alert Table
-  const tbodyAlert = document.getElementById('dash-alert-tbody');
-  if (tbodyAlert) {
-    if (alertList.length === 0) {
-      tbodyAlert.innerHTML = `<tr><td colspan="16" style="text-align: center; color:#16a34a; font-weight:700;">Semua perangkat dalam kondisi aman dan online.</td></tr>`;
-    } else {
-      let htmlAlert = "";
-      alertList.forEach(item => {
-        let badgeClass = "offline";
-        const st = item.status.toUpperCase();
-        if (st.includes("AMAN")) badgeClass = "aman";
-        else if (st.includes("WASPADA")) badgeClass = "waspada";
-        else if (st.includes("BAHAYA")) badgeClass = "bahaya";
+  renderStatusDonutChart(aman, waspada, bahaya, offline);
+}
 
-        htmlAlert += `
-          <tr>
-            <td><b>${item.device_id}</b></td>
-            <td>${item.nama_titik}</td>
-            <td>${item.psm}</td>
-            <td>${item.estate}</td>
-            <td>${item.divisi}</td>
-            <td>${item.blok}</td>
-            <td><span class="status-badge-sm ${badgeClass}">${item.status}</span></td>
-            <td>${item.latitude}</td>
-            <td>${item.longitude}</td>
-            <td><b>${item.tinggi_muka_air} cm</b></td>
-            <td>${item.elevasi_muka_air}</td>
-            <td>${item.jarak} cm</td>
-            <td>${item.kecepatan}</td>
-            <td>${item.kategori_perubahan}</td>
-            <td>${item.time_forecast}</td>
-            <td>${formatWaktuIndo(item.created_at)}</td>
-          </tr>
-        `;
-      });
-      tbodyAlert.innerHTML = htmlAlert;
+function renderStatusDonutChart(aman, waspada, bahaya, offline) {
+  const ctx = document.getElementById('statusDonutChart')?.getContext('2d');
+  if (!ctx) return;
+
+  if (statusChartInstance) {
+    statusChartInstance.destroy();
+  }
+
+  statusChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Aman', 'Waspada', 'Bahaya', 'Offline'],
+      datasets: [{
+        data: [aman, waspada, bahaya, offline],
+        backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#64748b'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false }
+      },
+      cutout: '75%'
     }
-  }
+  });
 }
 </script>
 </body>
