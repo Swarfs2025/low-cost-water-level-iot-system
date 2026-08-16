@@ -1007,6 +1007,71 @@ body, html {
 .status-badge-sm.waspada { background: #fef3c7; color: #d97706; }
 .status-badge-sm.aman { background: #dcfce7; color: #16a34a; }
 .status-badge-sm.offline { background: #f1f5f9; color: #64748b; }
+
+/* Custom Share Modal Styles */
+.custom-share-modal {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 99999;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+.share-modal-content {
+  background: #ffffff;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+  animation: slideUpShare 0.3s ease-out;
+}
+@keyframes slideUpShare {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.share-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 10px;
+}
+.share-modal-header h3 { margin: 0; font-size: 15px; font-weight: 800; color: #0f172a; }
+.close-panel-btn { background: #f1f5f9; border: none; width: 28px; height: 28px; border-radius: 50%; font-size: 16px; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.share-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.share-option {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.share-option:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.share-icon-btn {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.bg-wa { background: #25d366; }
+.bg-tg { background: #0088cc; }
+.bg-copy { background: #64748b; }
+.share-option span { font-size: 11px; font-weight: 600; color: #334155; }
 </style>
 </head>
 <body>
@@ -1458,6 +1523,30 @@ body, html {
   </div>
 </div>
 
+<!-- CUSTOM SHARE MODAL -->
+<div id="shareModal" class="custom-share-modal" onclick="tutupShareModal(event)">
+  <div class="share-modal-content" onclick="event.stopPropagation()">
+    <div class="share-modal-header">
+      <h3>Bagikan Melalui</h3>
+      <button class="close-panel-btn" onclick="document.getElementById('shareModal').style.display='none'">×</button>
+    </div>
+    <div class="share-grid">
+      <button class="share-option" onclick="shareKeWA()">
+        <div class="share-icon-btn bg-wa"><i class="fa-brands fa-whatsapp"></i></div>
+        <span>WhatsApp</span>
+      </button>
+      <button class="share-option" onclick="shareKeTelegram()">
+        <div class="share-icon-btn bg-tg"><i class="fa-brands fa-telegram"></i></div>
+        <span>Telegram</span>
+      </button>
+      <button class="share-option" onclick="salinTautanKeClipboard()">
+        <div class="share-icon-btn bg-copy"><i class="fa-solid fa-copy"></i></div>
+        <span>Salin Teks</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 <script>
@@ -1474,6 +1563,7 @@ let currentCloudData = null;
 let watchPositionId = null;
 let isTrackingActive = false;
 let statusChartInstance = null;
+let teksDisiapkanUntukShare = "";
 
 var googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { attribution: '© Google Satellite' }).addTo(map);
 var googleDefault = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { attribution: '© Google Streets' });
@@ -1622,8 +1712,6 @@ function switchView(viewId, element) {
 function updateNetworkStatus() {
   const badge = document.getElementById('live-badge-status');
   const text = document.getElementById('live-status-text');
-  if (!badge || !text) return;
-
   if (navigator.onLine) {
     badge.className = 'live-badge is-online';
     text.innerText = 'LIVE';
@@ -1633,17 +1721,8 @@ function updateNetworkStatus() {
   }
 }
 
-window.addEventListener('online', () => { 
-  updateNetworkStatus(); 
-  showToast("Koneksi terhubung kembali"); 
-  fetchOnlineData(); 
-});
-
-window.addEventListener('offline', () => { 
-  updateNetworkStatus(); 
-  showToast("Koneksi terputus (Offline)"); 
-});
-
+window.addEventListener('online', () => { updateNetworkStatus(); showToast("Koneksi terhubung kembali"); fetchOnlineData(); });
+window.addEventListener('offline', () => { updateNetworkStatus(); showToast("Koneksi terputus (Offline)"); });
 document.addEventListener('DOMContentLoaded', () => {
   updateNetworkStatus();
   fetchOnlineData();
@@ -1733,10 +1812,7 @@ function formatWaktuIndo(rawDateStr) {
 }
 
 function fetchOnlineData() {
-  if (!navigator.onLine) {
-    updateNetworkStatus();
-    return;
-  }
+  if (!navigator.onLine) return;
   const oldScript = document.getElementById('google-sheet-trigger');
   if (oldScript) oldScript.remove();
   const nocache = new Date().getTime();
@@ -1883,13 +1959,13 @@ function renderMapMarkers(dataList) {
 
     if (lat !== null && lng !== null) {
       let statusAlatOffline = (item.status.toUpperCase() === 'OFFLINE');
-      let warnaMarker = "#16a34a"; // Default: Hijau (Aman)
+      let warnaMarker = "#16a34a";
 
       if (statusAlatOffline) { 
-        warnaMarker = "#64748b"; // Abu-abu (Offline)
+        warnaMarker = "#64748b";
       } else {
-        if (item.status.toUpperCase().includes("WASPADA")) warnaMarker = "#d97706"; // Kuning (Waspada)
-        if (item.status.toUpperCase().includes("BAHAYA")) warnaMarker = "#dc2626";  // Merah (Bahaya)
+        if (item.status.toUpperCase().includes("WASPADA")) warnaMarker = "#d97706";
+        if (item.status.toUpperCase().includes("BAHAYA")) warnaMarker = "#dc2626";
       }
 
       const customIcon = L.divIcon({
@@ -1992,41 +2068,155 @@ function bukaPanelAtribut(attr) {
   document.getElementById('bottom-attribute-panel').classList.add('active');
 }
 
-/* ===== FITUR SHARE APK WEBVIEW & BROWSER SAFE ===== */
+/* ===== FITUR SHARE & MODAL KUSTOM ===== */
+function rakitTeksShare() {
+    const lat = parseToValidCoord(currentCloudData.latitude, false);
+    const lng = parseToValidCoord(currentCloudData.longitude, true);
+    
+    const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+    
+    let statusStr = (currentCloudData.status || "").toString().toUpperCase();
+    let statusTeksPesan = "OFFLINE"; 
+    
+    let statusAlatOffline = false;
+    let waktuSistemSekarang = new Date();
+    let waktuDataTerakhir = dapatkanObjekWaktu(currentCloudData.created_at);
+    if (waktuDataTerakhir) {
+        let selisihWaktuJam = Math.abs(waktuSistemSekarang - waktuDataTerakhir) / (1000 * 60 * 60);
+        if (selisihWaktuJam > 1.0) { statusAlatOffline = true; }
+    }
+    if (statusStr.includes("OFFLINE")) { statusAlatOffline = true; }
+
+    if (!statusAlatOffline) {
+        if (statusStr.includes("AMAN")) {
+            statusTeksPesan = "✅ AMAN";
+        } else if (statusStr.includes("WASPADA")) {
+            statusTeksPesan = "⚠️ WASPADA";
+        } else if (statusStr.includes("BAHAYA")) {
+            statusTeksPesan = "❌ BAHAYA";
+        } else {
+            statusTeksPesan = statusStr; 
+        }
+    }
+
+    function padRight(teks, totalLebar) {
+        let str = teks.toString();
+        return str + ' '.repeat(Math.max(0, totalLebar - str.length));
+    }
+
+    let teksPesan = `LCWL 2.0 | LOW COST WATER LEVEL\n\n` +
+                    `📍 *Informasi Lokasi*\n` +
+                    `\`${padRight("Nama Titik", 16)}: ${currentCloudData.nama_titik}\`\n` +
+                    `\`${padRight("Status", 16)}: ${statusTeksPesan}\`\n` +
+                    `\`${padRight("Tinggi Muka Air", 16)}: ${currentCloudData.tinggi_muka_air} cm\`\n` +
+                    `\`${padRight("Estate", 16)}: ${currentCloudData.estate}\`\n` +
+                    `\`${padRight("Blok", 16)}: ${currentCloudData.blok}\`\n` +
+                    `\`${padRight("Created At", 16)}: ${currentCloudData.created_at}\`\n\n` +
+                    `📌 *Koordinat GPS*\n` +
+                    `\`${padRight("Latitude", 16)}: ${lat}\`\n` +
+                    `\`${padRight("Longitude", 16)}: ${lng}\`\n\n` +
+                    `🌐 *Google Maps*\n` +
+                    `${googleMapsLink}\n\n` +
+                    `Pesan ini dibuat secara otomatis oleh LCWL 2.0.`;
+
+    return {
+        title: `LCWL 2.0 - ${currentCloudData.nama_titik}`,
+        text: teksPesan
+    };
+}
+
+function pushNewNavigationState() {
+    if (window.history && window.history.pushState) {
+        window.history.pushState({ modalOpen: true }, "");
+    }
+}
+
 function jalankanFiturShare() {
-  if (!currentCloudData) {
-    showToast("Pilih lokasi perangkat terlebih dahulu!");
-    return;
-  }
+    if (!currentCloudData) {
+        showToast("Data belum siap dibagikan!");
+        return;
+    }
+    const shareData = rakitTeksShare();
+    teksDisiapkanUntukShare = shareData.text;
+    pushNewNavigationState();
 
-  const shareText = `*LCWL 2.0 Water Level Alert*\n` +
-                    `Perangkat: ${currentCloudData.nama_titik} (${currentCloudData.device_id})\n` +
-                    `Status: ${currentCloudData.status}\n` +
-                    `Tinggi Muka Air: ${currentCloudData.tinggi_muka_air} cm\n` +
-                    `Lokasi: ${currentCloudData.estate}, Divisi ${currentCloudData.divisi}, Blok ${currentCloudData.blok}\n` +
-                    `Peta: https://maps.google.com/?q=${currentCloudData.latitude},${currentCloudData.longitude}`;
-
-  if (navigator.share) {
-    navigator.share({
-      title: `LCWL 2.0 - ${currentCloudData.nama_titik}`,
-      text: shareText
-    }).catch(() => fallbackCopyShareText(shareText));
-  } else {
-    fallbackCopyShareText(shareText);
-  }
+    if (navigator.share) {
+        navigator.share({
+            title: shareData.title,
+            text: teksDisiapkanUntukShare
+        })
+        .then(() => console.log('Berhasil memicu Native Share Sheet.'))
+        .catch((err) => {
+            if (err.name !== 'AbortError') {
+                bukaModalKustom(teksDisiapkanUntukShare);
+            }
+        });
+    } else {
+        bukaModalKustom(teksDisiapkanUntukShare);
+    }
 }
 
-function fallbackCopyShareText(text) {
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).then(() => {
-      showToast("Detail lokasi disalin ke clipboard!");
-    }).catch(() => showLegacyCopyText(text));
-  } else {
-    showLegacyCopyText(text);
-  }
+function bukaModalKustom(teksLengkap) {
+    teksDisiapkanUntukShare = teksLengkap;
+    document.getElementById('shareModal').style.display = "flex";
 }
 
-function showLegacyCopyText(text) {
+function tutupShareModal(event) {
+    if (!event || event.target === document.getElementById('shareModal')) {
+        document.getElementById('shareModal').style.display = "none";
+    }
+}
+
+function shareKeWA() {
+    if (!teksDisiapkanUntukShare) {
+        showToast("Teks belum siap!");
+        return;
+    }
+    if (window.AppInventor) {
+        window.AppInventor.setWebViewString("WA:" + teksDisiapkanUntukShare);
+    } else {
+        const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
+        window.location.href = `https://api.whatsapp.com/send?text=${textEncoded}`;
+    }
+    document.getElementById('shareModal').style.display = "none";
+}
+
+function shareKeTelegram() {
+    if (!teksDisiapkanUntukShare) {
+        showToast("Teks belum siap!");
+        return;
+    }
+    if (window.AppInventor) {
+        window.AppInventor.setWebViewString("TG:" + teksDisiapkanUntukShare);
+    } else {
+        const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
+        window.location.href = `https://telegram.me/share/url?text=${textEncoded}`;
+    }
+    document.getElementById('shareModal').style.display = "none";
+}
+
+function salinTautanKeClipboard() {
+    if (!teksDisiapkanUntukShare) {
+        if (currentCloudData) {
+            teksDisiapkanUntukShare = rakitTeksShare().text;
+        } else {
+            showToast("Data belum siap!");
+            return;
+        }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(teksDisiapkanUntukShare).then(() => {
+            showToast("Tautan dan koordinat berhasil disalin ke clipboard.");
+        }).catch(() => {
+            salinTautanManualFallback(teksDisiapkanUntukShare);
+        });
+    } else {
+        salinTautanManualFallback(teksDisiapkanUntukShare);
+    }
+    document.getElementById('shareModal').style.display = "none";
+}
+
+function salinTautanManualFallback(text) {
   const textarea = document.createElement("textarea");
   textarea.value = text;
   textarea.style.position = "fixed";
@@ -2036,9 +2226,9 @@ function showLegacyCopyText(text) {
   textarea.select();
   try {
     document.execCommand('copy');
-    showToast("Detail lokasi disalin ke clipboard!");
+    showToast("Tautan dan koordinat berhasil disalin ke clipboard.");
   } catch (err) {
-    showToast("Gagal membagikan data");
+    showToast("Gagal menyalin teks");
   }
   document.body.removeChild(textarea);
 }
