@@ -2323,70 +2323,86 @@ function updateDashboardUI() {
     document.getElementById('dash-max-device').innerText = tmaList[0].device;
     document.getElementById('dash-min-tma').innerText = `${tmaList[tmaList.length - 1].val} cm`;
     document.getElementById('dash-min-device').innerText = tmaList[tmaList.length - 1].device;
-    document.getElementById('dash-speed-tma').innerText = "0.2 cm/jam";
-  }
-
-  const alertTbody = document.getElementById('dash-alert-tbody');
-  if (alertList.length === 0) {
-    alertTbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color:#16a34a; font-weight:700;">Semua perangkat dalam kondisi AMAN</td></tr>`;
+    document.getElementById('dash-speed-tma').innerText = "Normal";
   } else {
-    let rowsHtml = '';
-    alertList.forEach(item => {
-      rowsHtml += `
-        <tr>
-          <td><b>${item.device_id}</b></td>
-          <td>${item.nama_titik}</td>
-          <td>${item.psm}</td>
-          <td>${item.estate}</td>
-          <td>${item.divisi}</td>
-          <td>${item.blok}</td>
-          <td><span class="status-badge-sm ${item.status.toLowerCase()}">${item.status}</span></td>
-          <td>${item.latitude || '-'}</td>
-          <td>${item.longitude || '-'}</td>
-          <td><b>${item.tinggi_muka_air} cm</b></td>
-          <td>${item.elevasi_muka_air}</td>
-          <td>${item.jarak} cm</td>
-          <td>${item.kecepatan}</td>
-          <td>${item.kategori_perubahan}</td>
-          <td>${item.time_forecast}</td>
-          <td>${formatWaktuIndo(item.created_at)}</td>
-        </tr>
-      `;
-    });
-    alertTbody.innerHTML = rowsHtml;
+    document.getElementById('dash-avg-tma').innerText = "-";
+    document.getElementById('dash-max-tma').innerText = "-";
+    document.getElementById('dash-max-device').innerText = "-";
+    document.getElementById('dash-min-tma').innerText = "-";
+    document.getElementById('dash-min-device').innerText = "-";
+    document.getElementById('dash-speed-tma').innerText = "-";
   }
 
-  renderDonutChart(aman, waspada, bahaya, offline);
-}
-
-function renderDonutChart(aman, waspada, bahaya, offline) {
-  const ctx = document.getElementById('statusDonutChart')?.getContext('2d');
-  if (!ctx) return;
-
-  if (statusChartInstance) {
-    statusChartInstance.destroy();
+  const timeIndicator = document.getElementById('dash-time-indicator');
+  if (timeIndicator) {
+    timeIndicator.innerText = "Update: " + new Date().toLocaleTimeString('id-ID');
   }
 
-  statusChartInstance = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Aman', 'Waspada', 'Bahaya', 'Offline'],
-      datasets: [{
-        data: [aman, waspada, bahaya, offline],
-        backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#94a3b8'],
-        borderWidth: 2,
-        borderColor: '#ffffff'
-      }]
-    },
-    options: {
-      cutout: '75%',
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: { display: false }
-      }
+  // Render Chart.js Donut
+  const ctx = document.getElementById('statusDonutChart');
+  if (ctx) {
+    if (statusChartInstance) {
+      statusChartInstance.destroy();
     }
-  });
+    statusChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Aman', 'Waspada', 'Bahaya', 'Offline'],
+        datasets: [{
+          data: [aman, waspada, bahaya, offline],
+          backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#64748b'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false }
+        },
+        cutout: '75%'
+      }
+    });
+  }
+
+  // Render Top Alert Table
+  const tbodyAlert = document.getElementById('dash-alert-tbody');
+  if (tbodyAlert) {
+    if (alertList.length === 0) {
+      tbodyAlert.innerHTML = `<tr><td colspan="16" style="text-align: center; color:#16a34a; font-weight:700;">Semua perangkat dalam kondisi aman dan online.</td></tr>`;
+    } else {
+      let htmlAlert = "";
+      alertList.forEach(item => {
+        let badgeClass = "offline";
+        const st = item.status.toUpperCase();
+        if (st.includes("AMAN")) badgeClass = "aman";
+        else if (st.includes("WASPADA")) badgeClass = "waspada";
+        else if (st.includes("BAHAYA")) badgeClass = "bahaya";
+
+        htmlAlert += `
+          <tr>
+            <td><b>${item.device_id}</b></td>
+            <td>${item.nama_titik}</td>
+            <td>${item.psm}</td>
+            <td>${item.estate}</td>
+            <td>${item.divisi}</td>
+            <td>${item.blok}</td>
+            <td><span class="status-badge-sm ${badgeClass}">${item.status}</span></td>
+            <td>${item.latitude}</td>
+            <td>${item.longitude}</td>
+            <td><b>${item.tinggi_muka_air} cm</b></td>
+            <td>${item.elevasi_muka_air}</td>
+            <td>${item.jarak} cm</td>
+            <td>${item.kecepatan}</td>
+            <td>${item.kategori_perubahan}</td>
+            <td>${item.time_forecast}</td>
+            <td>${formatWaktuIndo(item.created_at)}</td>
+          </tr>
+        `;
+      });
+      tbodyAlert.innerHTML = htmlAlert;
+    }
+  }
 }
 </script>
 </body>
