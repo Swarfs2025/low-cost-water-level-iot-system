@@ -1563,7 +1563,8 @@ let currentCloudData = null;
 let watchPositionId = null;
 let isTrackingActive = false;
 let statusChartInstance = null;
-let teksDisiapkanUntukShare = "";
+let teksDisiapkanForShare = "";
+let routingControlInstance = null; // Variabel kontrol rute internal
 
 var googleSatellite = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { attribution: '© Google Satellite' }).addTo(map);
 var googleDefault = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { attribution: '© Google Streets' });
@@ -1584,7 +1585,7 @@ map.getPane('userGpsPane').style.zIndex = 650;
 map.getPane('userGpsPane').style.pointerEvents = 'none';
 var userLocationLayer = L.layerGroup([], { pane: 'userGpsPane' }).addTo(map);
 
-/* ===== INTEGRASI LOKASI USER (GPS) ===== */
+/* ===== INTEGRASI LOKASI USER (GPS) & NAVIGASI INTERNAL ===== */
 
 function renderUserLocationMarker(lat, lng, accuracy) {
   userLocationLayer.clearLayers();
@@ -1671,6 +1672,55 @@ function toggleUserTracking() {
       { enableHighAccuracy: true, maximumAge: 2000 }
     );
   }
+}
+
+// Fungsi Fitur Navigasi Internal Baru (Tanpa Google Maps Eksternal)
+function mulaiNavigasiInternal(destLat, destLng) {
+  if (!navigator.geolocation) {
+    showToast("Geolocation tidak didukung pada browser ini.");
+    return;
+  }
+
+  showToast("Menghitung rute perjalanan...");
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const userLat = position.coords.latitude;
+      const userLng = position.coords.longitude;
+
+      // Render marker lokasi user saat ini
+      renderUserLocationMarker(userLat, userLng, position.coords.accuracy);
+
+      // Hapus rute sebelumnya jika ada
+      if (routingControlInstance) {
+        map.removeControl(routingControlInstance);
+        routingControlInstance = null;
+      }
+
+      // Buat rute baru menggunakan Leaflet Routing Machine
+      routingControlInstance = L.Routing.control({
+        waypoints: [
+          L.latLng(userLat, userLng),
+          L.latLng(destLat, destLng)
+        ],
+        routeWhileDragging: false,
+        addWaypoints: false,
+        fitSelectedRoutes: true,
+        showAlternatives: false,
+        lineOptions: {
+          styles: [{ color: '#0052cc', opacity: 0.8, weight: 6 }]
+        },
+        createMarker: function() { return null; } // Skip marker tambahan agar marker perangkat asli tetap bersih
+      }).addTo(map);
+
+      tutupPanelAtribut();
+      showToast("Rute berhasil dimuat ke tujuan!");
+    },
+    (error) => {
+      showToast("Gagal mendeteksi lokasi awal: " + error.message);
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
 }
 
 function tutupPanelAtribut() {
@@ -2019,14 +2069,16 @@ function bukaPanelAtribut(attr) {
   tag.className = `status-tag ${attr.status.toLowerCase()}`;
   tag.innerText = attr.status;
 
+  // Integrasi tombol rute internal
   const routeBtn = document.getElementById('btn-maps-route');
   if (routeBtn) {
     routeBtn.onclick = function() {
-      if (attr.latitude && attr.longitude) {
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${attr.latitude},${attr.longitude}`;
-        window.open(mapsUrl, '_blank');
+      const lat = parseToValidCoord(attr.latitude, false);
+      const lng = parseToValidCoord(attr.longitude, true);
+      if (lat !== null && lng !== null) {
+        mulaiNavigasiInternal(lat, lng);
       } else {
-        showToast("Koordinat lokasi tidak valid");
+        showToast("Koordinat lokasi perangkat tidak valid");
       }
     };
   }
@@ -2137,27 +2189,27 @@ function jalankanFiturShare() {
         return;
     }
     const shareData = rakitTeksShare();
-    teksDisiapkanUntukShare = shareData.text;
+    teksDisiapkanForShare = shareData.text;
     pushNewNavigationState();
 
     if (navigator.share) {
         navigator.share({
             title: shareData.title,
-            text: teksDisiapkanUntukShare
+            text: teksDisiapkanForShare
         })
         .then(() => console.log('Berhasil memicu Native Share Sheet.'))
         .catch((err) => {
             if (err.name !== 'AbortError') {
-                bukaModalKustom(teksDisiapkanUntukShare);
+                bukaModalKustom(teksDisiapkanForShare);
             }
         });
     } else {
-        bukaModalKustom(teksDisiapkanUntukShare);
+        bukaModalKustom(teksDisiapkanForShare);
     }
 }
 
 function bukaModalKustom(teksLengkap) {
-    teksDisiapkanUntukShare = teksLengkap;
+    teksDisiapkanForShare = teksLengkap;
     document.getElementById('shareModal').style.display = "flex";
 }
 
@@ -2168,50 +2220,50 @@ function tutupShareModal(event) {
 }
 
 function shareKeWA() {
-    if (!teksDisiapkanUntukShare) {
+    if (!teksDisiapkanForShare) {
         showToast("Teks belum siap!");
         return;
     }
     if (window.AppInventor) {
-        window.AppInventor.setWebViewString("WA:" + teksDisiapkanUntukShare);
+        window.AppInventor.setWebViewString("WA:" + teksDisiapkanForShare);
     } else {
-        const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
+        const textEncoded = encodeURIComponent(teksDisiapkanForShare);
         window.location.href = `https://api.whatsapp.com/send?text=${textEncoded}`;
     }
     document.getElementById('shareModal').style.display = "none";
 }
 
 function shareKeTelegram() {
-    if (!teksDisiapkanUntukShare) {
+    if (!teksDisiapkanForShare) {
         showToast("Teks belum siap!");
         return;
     }
     if (window.AppInventor) {
-        window.AppInventor.setWebViewString("TG:" + teksDisiapkanUntukShare);
+        window.AppInventor.setWebViewString("TG:" + teksDisiapkanForShare);
     } else {
-        const textEncoded = encodeURIComponent(teksDisiapkanUntukShare);
+        const textEncoded = encodeURIComponent(teksDisiapkanForShare);
         window.location.href = `https://telegram.me/share/url?text=${textEncoded}`;
     }
     document.getElementById('shareModal').style.display = "none";
 }
 
 function salinTautanKeClipboard() {
-    if (!teksDisiapkanUntukShare) {
+    if (!teksDisiapkanForShare) {
         if (currentCloudData) {
-            teksDisiapkanUntukShare = rakitTeksShare().text;
+            teksDisiapkanForShare = rakitTeksShare().text;
         } else {
             showToast("Data belum siap!");
             return;
         }
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(teksDisiapkanUntukShare).then(() => {
+        navigator.clipboard.writeText(teksDisiapkanForShare).then(() => {
             showToast("Tautan dan koordinat berhasil disalin ke clipboard.");
         }).catch(() => {
-            salinTautanManualFallback(teksDisiapkanUntukShare);
+            salinTautanManualFallback(teksDisiapkanForShare);
         });
     } else {
-        salinTautanManualFallback(teksDisiapkanUntukShare);
+        salinTautanManualFallback(teksDisiapkanForShare);
     }
     document.getElementById('shareModal').style.display = "none";
 }
