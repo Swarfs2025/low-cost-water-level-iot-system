@@ -1544,6 +1544,11 @@ body, html {
     <button class="action-btn btn-primary" id="btn-maps-route"><i class="fa-solid fa-location-arrow"></i> Navigasi</button>
     <button class="action-btn btn-outline" style="max-width: 44px;" onclick="jalankanFiturShare()"><i class="fa-solid fa-share-nodes"></i></button>
   </div>
+
+  <!-- INTEGRASI BLOK KODE INFORMASI JARAK DAN WAKTU RUTE -->
+  <div id="route-info-container" style="background: white; padding: 8px 12px; margin-top: 5px; border-radius: 4px; box-shadow: 0 1px 5px rgba(0,0,0,0.4); font-weight: bold; font-size: 14px;">
+      Jarak & Waktu Tempuh: <span id="text-jarak-waktu">Menghitung rute...</span>
+  </div>
   
   <div class="table-responsive-container" id="scroll-table-container">
     <table class="grid-table">
@@ -1619,7 +1624,6 @@ var userLocationLayer = L.layerGroup([], { pane: 'userGpsPane' }).addTo(map);
 
 /* ===== FITUR TAMBAHAN: KLIK SEMBARANG TEMPAT UNTUK MENGHILANGKAN RUTE ===== */
 map.on('click', function(e) {
-  // Jika rute aktif, klik sembarang tempat di peta akan menghapus rute & menutup panel
   if (routingControlInstance) {
     map.removeControl(routingControlInstance);
     routingControlInstance = null;
@@ -1751,6 +1755,22 @@ function mulaiNavigasiInternal(destLat, destLng) {
         },
         createMarker: function() { return null; }
       }).addTo(map);
+
+      // INTEGRASI BLOK KODE EVENT LISTENER ROUTING MACHINE
+      routingControlInstance.on('routesfound', function(e) {
+          // Mengambil data ringkasan dari rute pertama yang ditemukan
+          var summary = e.routes[0].summary;
+          
+          // Konversi jarak ke kilometer dan waktu ke menit
+          var jarakKm = (summary.totalDistance / 1000).toFixed(1); 
+          var durasiMenit = Math.round(summary.totalTime / 60); 
+          
+          // Menampilkan informasi ke elemen HTML di bawah rute/peta
+          var infoElement = document.getElementById('text-jarak-waktu');
+          if (infoElement) {
+              infoElement.innerText = jarakKm + " km (" + durasiMenit + " menit)";
+          }
+      });
 
       tutupPanelAtribut();
       showToast("Rute berhasil dimuat ke tujuan!");
@@ -2066,7 +2086,7 @@ function renderMapMarkers(dataList) {
 
       const marker = L.marker([lat, lng], { icon: customIcon });
       marker.on('click', (e) => {
-        L.DomEvent.stopPropagation(e); // Cegah event klik map tertrigger saat marker diklik
+        L.DomEvent.stopPropagation(e);
         bukaPanelAtribut(item);
       });
       markersToAdd.push(marker);
@@ -2425,6 +2445,7 @@ function updateDashboardUI() {
   } else {
     let rowsHtml = '';
     alertList.forEach(item => {
+      let stClass = item.status.toLowerCase();
       rowsHtml += `
         <tr>
           <td><b>${item.device_id}</b></td>
@@ -2433,10 +2454,10 @@ function updateDashboardUI() {
           <td>${item.estate}</td>
           <td>${item.divisi}</td>
           <td>${item.blok}</td>
-          <td><span class="status-badge-sm ${item.status.toLowerCase()}">${item.status}</span></td>
-          <td>${item.latitude || '-'}</td>
-          <td>${item.longitude || '-'}</td>
-          <td><b>${item.tinggi_muka_air} cm</b></td>
+          <td><span class="status-badge-sm ${stClass}">${item.status}</span></td>
+          <td>${item.latitude}</td>
+          <td>${item.longitude}</td>
+          <td>${item.tinggi_muka_air} cm</td>
           <td>${item.elevasi_muka_air}</td>
           <td>${item.jarak} cm</td>
           <td>${item.kecepatan}</td>
@@ -2449,35 +2470,29 @@ function updateDashboardUI() {
     alertTbody.innerHTML = rowsHtml;
   }
 
-  renderDonutChart(aman, waspada, bahaya, offline);
-}
-
-function renderDonutChart(aman, waspada, bahaya, offline) {
   const ctx = document.getElementById('statusDonutChart')?.getContext('2d');
-  if (!ctx) return;
-
-  if (statusChartInstance) {
-    statusChartInstance.destroy();
+  if (ctx) {
+    if (statusChartInstance) statusChartInstance.destroy();
+    statusChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Aman', 'Waspada', 'Bahaya', 'Offline'],
+        datasets: [{
+          data: [aman, waspada, bahaya, offline],
+          backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#94a3b8'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        cutout: '75%'
+      }
+    });
   }
 
-  statusChartInstance = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Aman', 'Waspada', 'Bahaya', 'Offline'],
-      datasets: [{
-        data: [aman, waspada, bahaya, offline],
-        backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#94a3b8'],
-        borderWidth: 2,
-        borderColor: '#ffffff'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: { legend: { display: false } },
-      cutout: '70%'
-    }
-  });
+  document.getElementById('dash-time-indicator').innerText = "Update Terakhir: " + new Date().toLocaleTimeString('id-ID');
 }
 </script>
 </body>
