@@ -80,12 +80,11 @@ body, html {
   font-family: 'Inter', sans-serif !important;
 }
 
-/* Sembunyikan detail rute teks panjang, tampilkan ringkasan jarak/waktu saja */
 .leaflet-routing-alt {
   max-height: none !important;
 }
 .leaflet-routing-alt tr {
-  display: none !important; /* Sembunyikan langkah-langkah turn-by-turn */
+  display: none !important;
 }
 .leaflet-routing-alt h2 {
   font-size: 12px !important;
@@ -1363,8 +1362,6 @@ body, html {
   <ul class="drawer-menu-list">
     <a class="drawer-menu-item active-menu" onclick="switchView('map-view', this)"><i class="fa-solid fa-map"></i> Peta Utama</a>
     <a class="drawer-menu-item" onclick="switchView('dashboard-view', this)"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
-    <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-chart-area"></i> Grafik History</a>
-    <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-bell"></i> Alert / Notifikasi</a>
     <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-microchip"></i> Perangkat</a>
     <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-gear"></i> Pengaturan</a>
     <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-circle-info"></i> Info Aplikasi</a>
@@ -1617,9 +1614,7 @@ map.getPane('userGpsPane').style.zIndex = 650;
 map.getPane('userGpsPane').style.pointerEvents = 'none';
 var userLocationLayer = L.layerGroup([], { pane: 'userGpsPane' }).addTo(map);
 
-/* ===== FITUR TAMBAHAN: KLIK SEMBARANG TEMPAT UNTUK MENGHILANGKAN RUTE ===== */
 map.on('click', function(e) {
-  // Jika rute aktif, klik sembarang tempat di peta akan menghapus rute & menutup panel
   if (routingControlInstance) {
     map.removeControl(routingControlInstance);
     routingControlInstance = null;
@@ -1627,8 +1622,6 @@ map.on('click', function(e) {
   }
   tutupPanelAtribut();
 });
-
-/* ===== INTEGRASI LOKASI USER (GPS) & NAVIGASI INTERNAL ===== */
 
 function renderUserLocationMarker(lat, lng, accuracy) {
   userLocationLayer.clearLayers();
@@ -2066,7 +2059,7 @@ function renderMapMarkers(dataList) {
 
       const marker = L.marker([lat, lng], { icon: customIcon });
       marker.on('click', (e) => {
-        L.DomEvent.stopPropagation(e); // Cegah event klik map tertrigger saat marker diklik
+        L.DomEvent.stopPropagation(e);
         bukaPanelAtribut(item);
       });
       markersToAdd.push(marker);
@@ -2161,7 +2154,6 @@ function bukaPanelAtribut(attr) {
   document.getElementById('bottom-attribute-panel').classList.add('active');
 }
 
-/* ===== FITUR SHARE & MODAL KUSTOM ===== */
 function rakitTeksShare() {
     const lat = parseToValidCoord(currentCloudData.latitude, false);
     const lng = parseToValidCoord(currentCloudData.longitude, true);
@@ -2367,7 +2359,6 @@ function resetFilterUI() {
   applySmartFilter();
 }
 
-/* ===== LOGIKA DASHBOARD UI ===== */
 function updateDashboardUI() {
   const total = allCloudDataList.length;
   let aman = 0, waspada = 0, bahaya = 0, offline = 0;
