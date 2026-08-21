@@ -1127,6 +1127,25 @@ body, html {
 .bg-tg { background: #0088cc; }
 .bg-copy { background: #64748b; }
 .share-option span { font-size: 11px; font-weight: 600; color: #334155; }
+
+/* INFO APLIKASI MODAL STYLES */
+.info-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+.info-item span.label { color: #64748b; font-weight: 500; }
+.info-item span.value { color: #0f172a; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -1394,7 +1413,7 @@ body, html {
     <a class="drawer-menu-item" onclick="switchView('dashboard-view', this)"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
     <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-microchip"></i> Perangkat</a>
     <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-gear"></i> Pengaturan</a>
-    <a class="drawer-menu-item" onclick="closeDrawer()"><i class="fa-solid fa-circle-info"></i> Info Aplikasi</a>
+    <a class="drawer-menu-item" onclick="toggleSideModal('info-app-modal'); closeDrawer();"><i class="fa-solid fa-circle-info"></i> Info Aplikasi</a>
   </ul>
   <div style="padding: 16px 20px; border-top: 1px solid #1e293b; background: rgba(15, 23, 42, 0.3);">
     <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -1403,6 +1422,62 @@ body, html {
         <span style="font-size: 11px; color: #94a3b8; font-weight: 500;">System Online</span>
       </div>
       <span style="font-size: 11px; font-family: monospace; color: #64748b;">v2.0</span>
+    </div>
+  </div>
+</div>
+
+<!-- INFO APLIKASI MODAL -->
+<div id="info-app-modal" class="modal-side-sheet">
+  <div class="filter-ui-header">
+    <h3 class="title"><i class="fa-solid fa-circle-info" style="margin-right: 6px; color: #3b82f6;"></i> Info Aplikasi</h3>
+    <button class="nav-icon" onclick="toggleSideModal('info-app-modal')"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="filter-ui-body">
+    <div style="text-align: center; padding: 12px 0;">
+      <div style="width: 56px; height: 56px; background: #0052cc; color: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px; box-shadow: 0 8px 20px rgba(0, 82, 204, 0.3);">
+        <i class="fa-solid fa-droplet"></i>
+      </div>
+      <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">LCWL 2.0</h3>
+      <p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">Low Cost Water Level</p>
+    </div>
+
+    <div class="filter-group-title">Informasi Sistem</div>
+    <div class="info-card">
+      <div class="info-item">
+        <span class="label">Versi Aplikasi</span>
+        <span class="value">2.0.0</span>
+      </div>
+      <div class="info-divider" style="height:1px; background:#e2e8f0;"></div>
+      <div class="info-item">
+        <span class="label">Framework Peta</span>
+        <span class="value">Leaflet JS 1.9.4</span>
+      </div>
+      <div class="info-divider" style="height:1px; background:#e2e8f0;"></div>
+      <div class="info-item">
+        <span class="label">Data Engine</span>
+        <span class="value">Google Cloud API</span>
+      </div>
+      <div class="info-divider" style="height:1px; background:#e2e8f0;"></div>
+      <div class="info-item">
+        <span class="label">Status Server</span>
+        <span class="value" style="color: #16a34a;">Terhubung (Live)</span>
+      </div>
+    </div>
+
+    <div class="filter-group-title">Fitur Utama</div>
+    <div class="info-card" style="gap: 10px;">
+      <div style="display: flex; gap: 8px; font-size: 11px; color: #334155;">
+        <i class="fa-solid fa-circle-check" style="color: #0284c7; margin-top: 2px;"></i>
+        <span>Monitoring ketinggian muka air secara real-time.</span>
+      </div>
+      <div style="display: flex; gap: 8px; font-size: 11px; color: #334155;">
+        <i class="fa-solid fa-circle-check" style="color: #0284c7; margin-top: 2px;"></i>
+        <span>Peringatan dini otomatis (Aman, Waspada, Bahaya).</span>
+      </div>
+      <div style="display: flex; gap: 8px; font-size: 11px; color: #334155;">
+        <i class="fa-solid fa-circle-check" style="color: #0284c7; margin-top: 2px;"></i>
+        <span>Sistem integrasi GIS dan Navigasi lokasi rute.</span>
+      </div>
     </div>
   </div>
 </div>
@@ -2416,15 +2491,18 @@ function resetFilterUI() {
   selectEnterpriseOption('divisi', 'ALL', 'Semua Divisi');
   selectEnterpriseOption('blok', 'ALL', 'Semua Blok');
 
-  document.getElementById('filter-search').value = '';
   applySmartFilter();
 }
 
 function updateDashboardUI() {
-  const total = allCloudDataList.length;
+  const timeInd = document.getElementById('dash-time-indicator');
+  if (timeInd) timeInd.innerText = new Date().toLocaleString('id-ID');
+
+  let total = allCloudDataList.length;
   let aman = 0, waspada = 0, bahaya = 0, offline = 0;
-  let tmaList = [];
-  let alertList = [];
+  let sumTma = 0, validTmaCount = 0;
+  let maxTma = -Infinity, minTma = Infinity;
+  let maxDev = "-", minDev = "-";
 
   allCloudDataList.forEach(item => {
     const st = item.status.toUpperCase();
@@ -2433,11 +2511,12 @@ function updateDashboardUI() {
     else if (st === 'BAHAYA') bahaya++;
     else offline++;
 
-    const val = parseFloat(item.tinggi_muka_air);
-    if (!isNaN(val)) tmaList.push({ val: val, device: item.nama_titik });
-
-    if (st === 'BAHAYA' || st === 'WASPADA' || st === 'OFFLINE') {
-      alertList.push(item);
+    const tmaVal = parseFloat(item.tinggi_muka_air);
+    if (!isNaN(tmaVal)) {
+      sumTma += tmaVal;
+      validTmaCount++;
+      if (tmaVal > maxTma) { maxTma = tmaVal; maxDev = item.nama_titik; }
+      if (tmaVal < minTma) { minTma = tmaVal; minDev = item.nama_titik; }
     }
   });
 
@@ -2447,10 +2526,10 @@ function updateDashboardUI() {
   document.getElementById('dash-bahaya-val').innerText = bahaya;
   document.getElementById('dash-offline-val').innerText = offline;
 
-  document.getElementById('dash-aman-sub').innerText = total ? `${Math.round((aman/total)*100)}% dari total` : '0%';
-  document.getElementById('dash-waspada-sub').innerText = total ? `${Math.round((waspada/total)*100)}% dari total` : '0%';
-  document.getElementById('dash-bahaya-sub').innerText = total ? `${Math.round((bahaya/total)*100)}% dari total` : '0%';
-  document.getElementById('dash-offline-sub').innerText = total ? `${Math.round((offline/total)*100)}% dari total` : '0%';
+  document.getElementById('dash-aman-sub').innerText = total ? `${((aman/total)*100).toFixed(0)}% dari total` : "0%";
+  document.getElementById('dash-waspada-sub').innerText = total ? `${((waspada/total)*100).toFixed(0)}% dari total` : "0%";
+  document.getElementById('dash-bahaya-sub').innerText = total ? `${((bahaya/total)*100).toFixed(0)}% dari total` : "0%";
+  document.getElementById('dash-offline-sub').innerText = total ? `${((offline/total)*100).toFixed(0)}% dari total` : "0%";
 
   document.getElementById('chart-center-val').innerText = total;
   document.getElementById('leg-aman').innerText = aman;
@@ -2458,54 +2537,46 @@ function updateDashboardUI() {
   document.getElementById('leg-bahaya').innerText = bahaya;
   document.getElementById('leg-offline').innerText = offline;
 
-  if (tmaList.length > 0) {
-    const sum = tmaList.reduce((a, b) => a + b.val, 0);
-    const avg = (sum / tmaList.length).toFixed(1);
-    tmaList.sort((a, b) => b.val - a.val);
-
-    document.getElementById('dash-avg-tma').innerText = `${avg} cm`;
-    document.getElementById('dash-max-tma').innerText = `${tmaList[0].val} cm`;
-    document.getElementById('dash-max-device').innerText = tmaList[0].device;
-    document.getElementById('dash-min-tma').innerText = `${tmaList[tmaList.length - 1].val} cm`;
-    document.getElementById('dash-min-device').innerText = tmaList[tmaList.length - 1].device;
-    document.getElementById('dash-speed-tma').innerText = "0.2 cm/jam";
-  }
-
-  const alertTbody = document.getElementById('dash-alert-tbody');
-  if (alertList.length === 0) {
-    alertTbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color:#16a34a; font-weight:700;">Semua perangkat dalam kondisi AMAN</td></tr>`;
-  } else {
-    let rowsHtml = '';
-    alertList.forEach(item => {
-      rowsHtml += `
-        <tr>
-          <td><b>${item.device_id}</b></td>
-          <td>${item.nama_titik}</td>
-          <td>${item.psm}</td>
-          <td>${item.estate}</td>
-          <td>${item.divisi}</td>
-          <td>${item.blok}</td>
-          <td><span class="status-badge-sm ${item.status.toLowerCase()}">${item.status}</span></td>
-          <td>${item.latitude || '-'}</td>
-          <td>${item.longitude || '-'}</td>
-          <td><b>${item.tinggi_muka_air} cm</b></td>
-          <td>${item.elevasi_muka_air}</td>
-          <td>${item.jarak} cm</td>
-          <td>${item.kecepatan}</td>
-          <td>${item.kategori_perubahan}</td>
-          <td>${item.time_forecast}</td>
-          <td>${formatWaktuIndo(item.created_at)}</td>
-        </tr>
-      `;
-    });
-    alertTbody.innerHTML = rowsHtml;
-  }
+  document.getElementById('dash-avg-tma').innerText = validTmaCount ? `${(sumTma / validTmaCount).toFixed(1)} cm` : "-";
+  document.getElementById('dash-max-tma').innerText = maxTma !== -Infinity ? `${maxTma} cm` : "-";
+  document.getElementById('dash-max-device').innerText = maxDev;
+  document.getElementById('dash-min-tma').innerText = minTma !== Infinity ? `${minTma} cm` : "-";
+  document.getElementById('dash-min-device').innerText = minDev;
+  document.getElementById('dash-speed-tma').innerText = "0.2 cm/j";
 
   renderDonutChart(aman, waspada, bahaya, offline);
+
+  const alertTbody = document.getElementById('dash-alert-tbody');
+  const alertItems = allCloudDataList.filter(item => item.status !== 'AMAN');
+
+  if (alertItems.length === 0) {
+    alertTbody.innerHTML = `<tr><td colspan="16" style="text-align: center; color:#16a34a; font-weight:700;">Semua Perangkat Dalam Kondisi Aman</td></tr>`;
+  } else {
+    alertTbody.innerHTML = alertItems.map(attr => `
+      <tr>
+        <td><b>${attr.device_id}</b></td>
+        <td>${attr.nama_titik}</td>
+        <td>${attr.psm}</td>
+        <td>${attr.estate}</td>
+        <td>${attr.divisi}</td>
+        <td>${attr.blok}</td>
+        <td><span class="status-badge-sm ${attr.status.toLowerCase()}">${attr.status}</span></td>
+        <td>${attr.latitude}</td>
+        <td>${attr.longitude}</td>
+        <td><b>${attr.tinggi_muka_air} cm</b></td>
+        <td>${attr.elevasi_muka_air}</td>
+        <td>${attr.jarak} cm</td>
+        <td>${attr.kecepatan}</td>
+        <td>${attr.kategori_perubahan}</td>
+        <td>${attr.time_forecast}</td>
+        <td>${formatWaktuIndo(attr.created_at)}</td>
+      </tr>
+    `).join('');
+  }
 }
 
 function renderDonutChart(aman, waspada, bahaya, offline) {
-  const ctx = document.getElementById('statusDonutChart')?.getContext('2d');
+  const ctx = document.getElementById('statusDonutChart');
   if (!ctx) return;
 
   if (statusChartInstance) {
@@ -2524,10 +2595,12 @@ function renderDonutChart(aman, waspada, bahaya, offline) {
       }]
     },
     options: {
+      cutout: '75%',
       responsive: true,
       maintainAspectRatio: true,
-      plugins: { legend: { display: false } },
-      cutout: '70%'
+      plugins: {
+        legend: { display: false }
+      }
     }
   });
 }
